@@ -6,5 +6,21 @@
     "comision": "A",
     "horario": "Lunes 19hs",
     "cupo": 20
-  }
+  },
+  
+  {
+    "id": "PROG-1",
+    "nombre": "Introducción a Programación",
+    "docenteId": 2,
+    "comision": "B",
+    "horario": "Miércoles 18hs",
+    "cupo": 30
+  },
+
+  { "id": "BD-1",
+    "nombre": "Base de Datos", 
+     "docenteId": 1,
+      "comision": "C",
+       "horario": "Jueves 20hs",
+          "cupo": 25 } 
 ]
