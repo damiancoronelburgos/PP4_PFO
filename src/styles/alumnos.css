@@ -173,3 +173,108 @@
 .alumnos-page .sb-logout:hover { background: rgba(0,0,0,.55); }
 .alumnos-page .sb-logout:active { transform: translateY(1px); }
 .alumnos-page .sb-logout-x { font-weight: 900; opacity: .9; }
+/* ====== PANEL: INSCRIPCIÓN A MATERIAS ====== */
+.alumnos-page .enroll-wrap{
+  position: relative;
+  z-index: 1;                 /* por encima del fondo */
+  margin-left: calc(280px + 40px); /* deja ver el sidebar */
+  margin-right: 40px;
+  padding-top: 90px;          /* despega del header de marca */
+  padding-bottom: 40px;
+}
+
+.alumnos-page .enroll-card{
+  background: rgba(12, 12, 12, 0.55);
+  border-radius: 18px;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+  padding: 18px 18px 24px;
+  color: #fff;
+}
+
+.alumnos-page .enroll-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 6px 6px 14px;
+}
+
+.alumnos-page .enroll-title{
+  margin:0;
+  font-size: clamp(22px, 2.8vw, 34px);
+  font-weight: 800;
+}
+
+.alumnos-page .enroll-cols{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.alumnos-page .enroll-col{
+  background: rgba(255,255,255,.08);
+  border-radius: 12px;
+  overflow: hidden;
+  display:flex; flex-direction:column;
+  max-height: 62vh;
+}
+
+.alumnos-page .enroll-col__head{
+  font-weight: 800;
+  text-align:center;
+  padding: 10px 12px;
+  background: rgba(0,0,0,.18);
+}
+
+.alumnos-page .enroll-list{
+  overflow:auto;
+  padding: 10px;
+  display:flex; flex-direction:column; gap:10px;
+}
+
+/* Tarjeta de materia / inscripción */
+.alumnos-page .enroll-item{
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  padding:10px 12px;
+}
+
+.alumnos-page .enroll-item h4{
+  margin:0 0 6px;
+  font-size:16px; font-weight:800;
+}
+
+.alumnos-page .enroll-meta{
+  margin:0; line-height:1.25; font-size:14px; opacity:.95;
+}
+
+.alumnos-page .enroll-actions{
+  display:flex; justify-content:flex-end; gap:8px; margin-top:8px;
+}
+
+/* Botones */
+.alumnos-page .btn{
+  border:none; border-radius:8px; padding:6px 10px;
+  font-weight:700; cursor:pointer;
+  transition: transform .05s ease, filter .15s ease, opacity .15s ease;
+}
+.alumnos-page .btn:active{ transform: translateY(1px); }
+
+.alumnos-page .btn-primary{
+  background:#00AEEF; color:#08212c;
+}
+.alumnos-page .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+
+.alumnos-page .btn-danger{
+  background:#ff5a5f; color:#fff;
+}
+
+/* Mensaje de éxito */
+.alumnos-page .enroll-success{
+  text-align:center; color:#ff3366; font-weight:800; margin-top:6px;
+}
+
+/* Responsive simple */
+@media (max-width: 980px){
+  .alumnos-page .enroll-wrap{ margin-left: 300px; margin-right: 16px; }
+  .alumnos-page .enroll-cols{ grid-template-columns: 1fr; }
+}

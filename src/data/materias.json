@@ -1,0 +1,10 @@
+[
+{
+    "id": "MAT-1",
+    "nombre": "Matemáticas",
+    "docenteId": 1,
+    "comision": "A",
+    "horario": "Lunes 19hs",
+    "cupo": 20
+  }
+]

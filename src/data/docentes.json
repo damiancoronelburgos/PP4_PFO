@@ -1,6 +1,12 @@
 [
-  { "id": 1,
-   "nombre": "alejandro",
+ {
+    "id": 1,
+    "nombre": "Alejandro",
+    "apellido": "Cubas",
+    "edad": "40",
+    "telefono":"1234567890",
+    "email": "alejandro.gomez@prisma.edu",
     "usuario": "docente2",
-     "rol": "docente" }
+    "rol": "docente"
+  }
 ]
