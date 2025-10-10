@@ -1,0 +1,18 @@
+[
+  { "username": "alumno1", 
+    "password": "1111", 
+    "role": "alumno",        
+    "refId": 1 },
+  { "username": "docente2",  
+    "password": "2222",
+    "role": "docente",
+    "refId": 1 },
+  { "username": "administrativo3",
+    "password": "3333",
+    "role": "administrador",
+    "refId": 1 },
+  { "username": "preceptor4",
+    "password": "4444", 
+    "role": "preceptor",     
+    "refId": 1 }
+]
