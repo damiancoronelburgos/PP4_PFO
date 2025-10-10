@@ -8,5 +8,15 @@
     "email": "alejandro.gomez@prisma.edu",
     "usuario": "docente2",
     "rol": "docente"
+  },
+  {
+    "id": 2,
+    "nombre": "Betik",
+    "apellido": "Enrique",
+    "edad": "48",
+    "telefono": "1132456789",
+    "email": "betik.enrique@prisma.edu",
+    "usuario": "docente3",
+    "rol": "docente"
   }
 ]

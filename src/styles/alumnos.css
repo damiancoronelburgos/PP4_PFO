@@ -278,3 +278,78 @@
   .alumnos-page .enroll-wrap{ margin-left: 300px; margin-right: 16px; }
   .alumnos-page .enroll-cols{ grid-template-columns: 1fr; }
 }
+/* ====== CALIFICACIONES ====== */
+/* Igual que enroll-wrap: deja aire al sidebar y al borde derecho */
+.grades-wrap{
+  position: relative;
+  z-index: 1;                       /* encima del fondo */
+  margin-left: calc(280px + 40px);  /* 280px del sidebar + 40px de aire */
+  margin-right: 40px;
+  padding-top: 90px;                /* despega del header de marca */
+  padding-bottom: 40px;
+}
+
+/* Caja del panel (mismo look & feel que inscripción) */
+.grades-card{
+  background: rgba(12,12,12,.55);
+  border-radius: 18px;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+  padding: 18px 18px 24px;
+  color: #fff;
+}
+
+/* Cabecera reutilizada */
+.grades-card .enroll-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 6px 6px 14px;
+}
+
+/* Filtro */
+.grades-filter{
+  display:flex; align-items:center; gap:10px;
+  margin: 8px 6px 14px;
+}
+.grades-filter__label{ font-weight:700; }
+.grades-input{
+  height: 32px; padding: 0 10px; border-radius: 8px; border: none;
+  width: 280px;                      /* opcional: darle ancho fijo */
+}
+.grades-btn{ height: 32px; padding: 6px 12px; }
+
+/* Tabla con scroll si crece */
+.grades-table-wrap{
+  max-height: 60vh;                  /* para que no se desborde el viewport */
+  overflow: auto;
+}
+.grades-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #fff;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+}
+.grades-table thead th{
+  position: sticky; top: 0;
+  background: rgba(0,0,0,.28);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  text-align: left;
+  padding: 10px;
+  font-weight: 800;
+}
+.grades-table tbody td{
+  padding: 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.grades-table tbody tr:nth-child(odd){ background: rgba(255,255,255,.03); }
+.grades-table .num{ text-align: center; font-weight: 700; }
+
+/* Responsive: una sola columna en pantallas chicas */
+@media (max-width: 980px){
+  .grades-wrap{
+    margin-left: 300px;              /* sidebar + un poco de aire */
+    margin-right: 16px;
+  }
+}
