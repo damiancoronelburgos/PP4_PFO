@@ -1,6 +1,13 @@
 [
   { "id": 1,
    "nombre": "sabrina",
+   "apellido":"choque",
+   "edad":"39",
+   "fecha de nacimiento":"19/05/1986",
+   "dni":"32328252",
+   "telefono":"1130110713",
+   "email":"sabrinaechoque@gmail.com",
     "usuario": "alumno1",
+    "contraseña":"1111",
      "rol": "alumno" }
 ]

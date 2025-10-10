@@ -1,0 +1,175 @@
+/* ===== VISTA ALUMNOS (aislada con namespace) ===== */
+
+/* Fondo a pantalla completa */
+.alumnos-page .full-bg {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  overflow: hidden;
+  z-index: 0;
+}
+.alumnos-page .bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Sidebar fijo con textura + oscurecido */
+.alumnos-page .sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 280px;
+  z-index: 2;
+  background:
+    linear-gradient(120deg, rgba(0,0,0,.55), rgba(0,0,0,.75)),
+    url("/diseno.jpg") center/cover no-repeat;
+  box-shadow: 8px 0 24px rgba(0,0,0,.25);
+}
+.alumnos-page .sidebar__inner {
+  position: relative;
+  min-height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Marca (círculo + logo + texto) */
+.alumnos-page .brand {
+  position: fixed;
+  top: 20px;
+  left: calc(280px + 580px); /* si luego querés mover, ajustá este valor */
+  transform: none;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 3;
+}
+.alumnos-page .brand__circle {
+  flex: 0 0 auto;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,.16);
+}
+.alumnos-page .brand__logo {
+  display: block;
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+  margin: 0;
+  padding: 0;
+}
+.alumnos-page .brand__title {
+  flex: 0 0 auto;
+  margin: 0;
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1.05;
+  color: #080808;
+  white-space: nowrap;
+  text-shadow:
+    0 0 2px rgb(255, 254, 254),
+    0 0 10px rgba(255,255,255,.55),
+    0 2px 6px rgba(253,249,249,.82);
+}
+
+/* Perfil (avatar + textos) */
+.alumnos-page .sb-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  margin-bottom: 28px;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.alumnos-page .sb-avatar {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,.9);
+  box-shadow: 0 6px 14px rgba(0,0,0,.35);
+}
+.alumnos-page .sb-role {
+  font-size: 25px;
+  opacity: .95;
+  margin: -10px 0 0;
+}
+.alumnos-page .sb-name {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Menú lateral (sin rectángulos, con icono) */
+.alumnos-page .sb-menu {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+.alumnos-page .sb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 6px 12px;
+  margin: 0 12px;
+  color: #eaeaea;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+  transition: color .15s ease, transform .05s ease, opacity .15s ease;
+}
+.alumnos-page .sb-item:hover { color: #ffffff; opacity: .95; }
+.alumnos-page .sb-item.is-active { color: #00AEEF; }
+
+.alumnos-page .sb-item__icon {
+  width: 18px; height: 18px; flex: 0 0 18px;
+  -webkit-mask: url("/lapiz.png") center/contain no-repeat;
+          mask: url("/lapiz.png") center/contain no-repeat;
+  background-color: #ffffff; /* blanco por defecto */
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  opacity: .95;
+}
+.alumnos-page .sb-item.is-active .sb-item__icon { background-color: #00AEEF; }
+
+/* Footer + botón Salir */
+.alumnos-page .sb-footer {
+  position: absolute;
+  left: 0; right: 0; bottom: 70px; /* subí/bajá a gusto */
+  padding: 0 16px;
+  display: flex;
+  justify-content: center;
+}
+.alumnos-page .sb-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(0,0,0,.38);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+  transition: background .15s ease, transform .05s ease;
+}
+.alumnos-page .sb-logout:hover { background: rgba(0,0,0,.55); }
+.alumnos-page .sb-logout:active { transform: translateY(1px); }
+.alumnos-page .sb-logout-x { font-weight: 900; opacity: .9; }
