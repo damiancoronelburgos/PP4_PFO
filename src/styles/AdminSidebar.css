@@ -1,27 +1,43 @@
 .admin-sidebar {
-  width: 220px;
+  width: 240px;
   height: 100vh;
-  background-color: #1a1a1a;
+  background: linear-gradient(180deg, #2b2b40, #1e1e2f);
   color: white;
   padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  gap: 20px;
 }
 
 .admin-sidebar h2 {
-  margin-bottom: 20px;
+  font-size: 22px;
+  font-weight: 600;
   text-align: center;
+  margin-bottom: 30px;
 }
 
 .admin-sidebar ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-.admin-sidebar li {
-  padding: 10px;
+.admin-sidebar ul li {
+  padding: 12px 16px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: background 0.3s, transform 0.2s;
 }
 
-.admin-sidebar li:hover {
-  background-color: #333;
+.admin-sidebar ul li:hover {
+  background-color: #3a3a5a;
+  transform: translateX(4px);
 }
+
+.admin-sidebar ul li.active {
+  background-color: #3498db;
+  font-weight: bold;
+}
+

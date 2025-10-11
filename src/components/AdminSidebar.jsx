@@ -1,27 +1,27 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/AdminSidebar.css";
-
-export default function AdminSidebar() {
-  const navigate = useNavigate();
+export default function AdminSidebar({ setVista, vistaActual }) {
+  const opciones = [
+    { key: "alumnos", label: "Gestionar Alumnos" },
+    { key: "oferta", label: "Configurar Oferta Académica" },
+    { key: "constancias", label: "Emitir Constancias" },
+    { key: "notificaciones", label: "Notificaciones" },
+  ];
 
   return (
     <div className="admin-sidebar">
       <h2>Administración</h2>
       <ul>
-        <li onClick={() => navigate("/administracion/gestionar-alumnos")}>
-          Gestionar Alumnos
-        </li>
-        <li onClick={() => navigate("/administracion/oferta-academica")}>
-          Configurar Oferta Académica
-        </li>
-        <li onClick={() => navigate("/administracion/constancias")}>
-          Emitir Constancias
-        </li>
-        <li onClick={() => navigate("/administracion/notificaciones")}>
-          Notificaciones
-        </li>
+        {opciones.map((opcion) => (
+          <li
+            key={opcion.key}
+            onClick={() => setVista(opcion.key)}
+            className={vistaActual === opcion.key ? "active" : ""}
+          >
+            {opcion.label}
+          </li>
+        ))}
       </ul>
     </div>
   );
 }
+
+
