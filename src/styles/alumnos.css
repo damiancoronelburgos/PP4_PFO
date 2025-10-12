@@ -109,43 +109,67 @@
   margin: 0;
 }
 
-/* Menú lateral (sin rectángulos, con icono) */
-.alumnos-page .sb-menu {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 6px;
+/* Menú lateral */
+.alumnos-page .sb-menu{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:6px;
 }
-.alumnos-page .sb-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 12px 6px 12px;
-  margin: 0 12px;
-  color: #eaeaea;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-shadow: 0 1px 2px rgba(0,0,0,.35);
-  transition: color .15s ease, transform .05s ease, opacity .15s ease;
-}
-.alumnos-page .sb-item:hover { color: #ffffff; opacity: .95; }
-.alumnos-page .sb-item.is-active { color: #00AEEF; }
 
-.alumnos-page .sb-item__icon {
-  width: 18px; height: 18px; flex: 0 0 18px;
-  -webkit-mask: url("/lapiz.png") center/contain no-repeat;
-          mask: url("/lapiz.png") center/contain no-repeat;
-  background-color: #ffffff; /* blanco por defecto */
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
-  opacity: .95;
+.alumnos-page .sb-item{
+  position: relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:4px 12px 6px 12px;
+  margin:0 12px;
+  color:#eaeaea;
+  text-decoration:none;
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:.2px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+  transition:color .15s ease, transform .05s ease, opacity .15s ease;
 }
-.alumnos-page .sb-item.is-active .sb-item__icon { background-color: #00AEEF; }
+
+.alumnos-page .sb-item:hover{ color:#ffffff; opacity:.95; }
+.alumnos-page .sb-item.is-active{ color:#00AEEF; }
+
+.alumnos-page .sb-item__icon{
+  width:18px; height:18px; flex:0 0 18px;
+  -webkit-mask:url("/lapiz.png") center/contain no-repeat;
+          mask:url("/lapiz.png") center/contain no-repeat;
+  background-color:#ffffff;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  opacity:.95;
+}
+.alumnos-page .sb-item.is-active .sb-item__icon{ background-color:#00AEEF; }
+
+/* ===== Contador circular (badge) ===== */
+.alumnos-page .sb-item .counter{
+  margin-left:auto;                /* empuja el contador a la derecha */
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#ff3b30;              /* rojo estilo notificación */
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  box-shadow:0 4px 10px rgba(255,59,48,.25);
+  transition:transform .08s ease, filter .15s ease, opacity .15s ease;
+}
+.alumnos-page .sb-item:hover .counter{ transform:translateY(-1px); }
+.alumnos-page .sb-item.is-disabled .counter{ opacity:.45; }
 
 /* Footer + botón Salir */
 .alumnos-page .sb-footer {
@@ -270,7 +294,7 @@
 
 /* Mensaje de éxito */
 .alumnos-page .enroll-success{
-  text-align:center; color:#ff3366; font-weight:800; margin-top:6px;
+  text-align:center; color:#8ef0fd; font-weight:800px; margin-top:10px;
 }
 
 /* Responsive simple */
