@@ -1,27 +1,17 @@
-export default function AdminSidebar({ setVista, vistaActual }) {
-  const opciones = [
-    { key: "alumnos", label: "Gestionar Alumnos" },
-    { key: "oferta", label: "Configurar Oferta Académica" },
-    { key: "constancias", label: "Emitir Constancias" },
-    { key: "notificaciones", label: "Notificaciones" },
-  ];
+import React from "react";
+import "../styles/AdminSidebar.css";
 
+export default function AdminSidebar({ setVista }) {
   return (
     <div className="admin-sidebar">
       <h2>Administración</h2>
       <ul>
-        {opciones.map((opcion) => (
-          <li
-            key={opcion.key}
-            onClick={() => setVista(opcion.key)}
-            className={vistaActual === opcion.key ? "active" : ""}
-          >
-            {opcion.label}
-          </li>
-        ))}
+        <li onClick={() => setVista("alumnos")}>Gestionar Alumnos</li>
+        <li onClick={() => setVista("oferta")}>Configurar Oferta Académica</li>
+        <li onClick={() => setVista("constancias")}>Emitir Constancias</li>
+        <li onClick={() => setVista("notificaciones")}>Notificaciones</li>
       </ul>
     </div>
   );
 }
-
 
