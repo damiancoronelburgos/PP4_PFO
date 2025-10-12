@@ -17,7 +17,6 @@ export default function AdminSidebar({ setVista, vistaActual }) {
   };
 
   const menuItems = [
-    { key: "inicio", label: "Inicio" },
     { key: "alumnos", label: "Gestionar Alumnos" },
     { key: "oferta", label: "Configurar Oferta Académica" },
     { key: "constancias", label: "Emitir Constancias" },

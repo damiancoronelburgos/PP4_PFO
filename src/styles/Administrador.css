@@ -1,3 +1,14 @@
+.administrador-container {
+    min-height: 100vh;
+    display: flex;
+    
+    background-image: url('/prisma.png'); 
+    background-size: cover;          
+    background-position: center center; 
+    background-attachment: fixed;    
+}
+
+
 /* Variables para consistencia */
 :root {
     --color-fondo-panel-claro: rgba(255, 255, 255, 0.85); /* Blanco semi-transparente */
@@ -13,10 +24,7 @@
     flex-grow: 1; 
     padding: 20px 40px;
     font-family: Arial, sans-serif;
-    /* Esto es importante si este componente define el fondo de la pantalla */
-    /* min-height: 100vh; */ 
-    /* Si el fondo (con la imagen del edificio) está en un contenedor superior, 
-       elimina el min-height y el fondo de aquí. */
+
 }
 
 /* 2. Cabecera del Instituto */
@@ -35,7 +43,11 @@
     width: 40px;
     height: 40px;
     margin-right: 15px;
-    background-color: #e6007e; /* Placeholder para el logo */
+    background-image: url('/Logo.png'); 
+    background-size: contain; 
+    background-repeat: no-repeat; 
+    background-position: center center;
+    background-color: transparent;
     border-radius: 5px;
 }
 
@@ -200,13 +212,21 @@
 .input-form {
     width: 100%;
     padding: 10px;
-    border: 1px solid var(--color-borde-gris);
+    /* QUITAMOS EL BORDE */
+    border: none; 
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 1em;
-    /* Estilo del placeholder claro en el diseño */
-    background-color: #f0f0f0; 
-    border: none;
+    /* COLOR DE FONDO MÁS CLARO Y PROFESIONAL */
+    background-color: #d5d5d5; /* Un gris muy sutil, similar al de los diseños */ 
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.input-form:focus {
+    /* Mantener un buen feedback visual al hacer clic */
+    background-color: #ffffff;
+    box-shadow: 0 0 0 0.15rem rgba(0, 123, 255, 0.25);
+    outline: none;
 }
 
 /* Contenedor para campos que ocupan dos columnas (DNI, Tipo) */
@@ -323,7 +343,7 @@
     padding: 8px 10px;
     border: none;
     border-radius: 4px;
-    background-color: #f0f0f0; /* Fondo gris claro */
+    background-color: #d5d5d5; /* Fondo gris claro */
     box-sizing: border-box;
 }
 
@@ -350,7 +370,7 @@
     box-sizing: border-box;
     font-family: Arial, sans-serif;
     font-size: 1em;
-    background-color: #f0f0f0; /* Fondo gris claro */
+    background-color: #d5d5d5; /* Fondo gris claro */
     margin-bottom: 10px;
 }
 
