@@ -7,16 +7,38 @@
     background-position: center center; 
     background-attachment: fixed;    
 }
+.bienvenida {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6em;
+    color: #2c3e50;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding: 25px 30px;
+    margin: 40px auto;
+    max-width: 600px;
+    background: linear-gradient(135deg, #eceff1 0%, #cfd8dc 100%);
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 
+                0 3px 6px rgba(0, 0, 0, 0.10);
+    border: 1px solid rgba(180, 195, 205, 0.6);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
+.bienvenida:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.20),
+                0 5px 10px rgba(0, 0, 0, 0.12);
+}
 
 /* Variables para consistencia */
 :root {
-    --color-fondo-panel-claro: rgba(255, 255, 255, 0.85); /* Blanco semi-transparente */
-    --color-fondo-panel-oscuro: rgba(0, 0, 0, 0.4);       /* Negro semi-transparente */
-    --color-texto-oscuro: #333333;
-    --color-texto-claro: #ffffff;
+    --color-fondo-panel-claro: rgba(79, 77, 77, 0.85); /* Blanco semi-transparente */
+    --color-fondo-panel-oscuro: rgba(237, 231, 231, 0.4);       /* Negro semi-transparente */
+    --color-texto-oscuro: #f1eded;
+    --color-texto-claro: #8d8787;
     --color-borde-gris: #cccccc;
-    --color-gris-boton: rgba(108, 117, 125, 0.7);
+    --color-gris-boton: rgba(202, 206, 210, 0.7);
 }
 
 /* 1. Contenedor Principal de la Gestión */
@@ -81,15 +103,15 @@
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: var(--color-gris-boton); 
-    color: var(--color-texto-claro);
+    background-color: var(--color-fondo-panel-claro);
+    color: #cccccc;
     border: none;
     padding: 8px 15px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.2s;
     font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px rgba(222, 66, 66, 0.5); 
 }
 
 .boton-eliminar:hover {
@@ -116,7 +138,7 @@
 }
 
 .boton-accion:hover {
-    background-color: rgba(255, 255, 255, 1);
+    background-color: rgb(108, 106, 106);
 }
 
 /* 4. Formulario/Vista de Datos (El cuadro interior blanco) */
@@ -157,7 +179,7 @@
 /* Botón Volver */
 .boton-volver {
     position: absolute;
-    bottom: 25px;
+    bottom: 5px;
     right: 25px;
     background-color: rgba(255, 255, 255, 0.7); 
     color: var(--color-texto-oscuro);
@@ -173,6 +195,22 @@
 .boton-volver:hover {
     background-color: rgba(240, 240, 240, 1);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*esto es para constancias*/
@@ -377,7 +415,7 @@
 /* Botón Enviar */
 .boton-enviar {
     position: absolute;
-    bottom: 0px; 
+    bottom: -20px; 
     right: 0px;
     background-color: #343a40; /* Color oscuro similar al diseño */
     color: var(--color-texto-claro);
@@ -402,3 +440,20 @@
     
     gap: 15px;
 }
+
+
+/*constancias*/
+.pdf-content-hidden {
+    /* Mueve el elemento lejos de la pantalla, pero permite que html2canvas lo capture */
+    position: absolute;
+    top: -5000px; /* Usa 'top' en lugar de 'left' */
+    left: 0;
+    z-index: -1;
+    /* MUY IMPORTANTE: Asegúrate de que el ancho sea fijo para el A4 */
+    width: 21cm; 
+    height: 29.7cm;
+    background-color: white; 
+    color: black;
+}
+
+

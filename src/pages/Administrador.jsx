@@ -21,7 +21,7 @@ export default function Administrador() {
       case "notificaciones":
         return <Notificaciones />;
       default:
-        return <h3>Seleccione una opción del menú</h3>;
+        return <h3 className="bienvenida">Seleccione una opción del menú</h3>
     }
   };
 

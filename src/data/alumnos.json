@@ -9,5 +9,19 @@
    "email":"sabrinaechoque@gmail.com",
     "usuario": "alumno1",
     "contraseña":"1111",
-     "rol": "alumno" }
+     "rol": "alumno",
+    "curso": "base de datos" },
+
+  { "id": 2,
+   "nombre": "damian",
+   "apellido":"coronel",
+   "edad":"32",
+   "fecha de nacimiento":"22/01/1993",
+   "dni":"37191634",
+   "telefono":"11111111",
+   "email":"damiancoronel@gmail.com",
+    "usuario": "alumno2",
+    "contraseña":"1111",
+     "rol": "alumno",
+    "curso": "base de datos" }
 ]
