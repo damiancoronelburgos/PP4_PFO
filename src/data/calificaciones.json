@@ -1,57 +1,23 @@
 [
-  {
-    "alumnoId": 1,
-    "materiaId": "MAT-1",
-    "comision": "A",
-    "parciales": { "p1": 8, "p2": 10, "p3": null },
-    "estado": "En curso",
-    "observacion": "Regular",
-    "docenteId": 1,
-    "anio": 2025,
-    "cuatrimestre": 1
-  },
-  {
-    "alumnoId": 1,
-    "materiaId": "PROG-1",
-    "comision": "B",
-    "parciales": { "p1": 9, "p2": 8, "p3": 10 },
-    "estado": "Aprobado",
-    "observacion": "",
-    "docenteId": 2,
-    "anio": 2025,
-    "cuatrimestre": 1
-  },
-  {
-    "alumnoId": 1,
-    "materiaId": "MAT-1",
-    "comision": "A",
-    "parciales": { "p1": 6, "p2": 7, "p3": 6 },
-    "estado": "Aprobado",
-    "observacion": "Promociona con 7",
-    "docenteId": 1,
-    "anio": 2024,
-    "cuatrimestre": 2
-  },
-  {
-    "alumnoId": 1,
-    "materiaId": "PROG-1",
-    "comision": "B",
-    "parciales": { "p1": 7, "p2": 6, "p3": null },
-    "estado": "En curso",
-    "observacion": "Recuperatorio pendiente",
-    "docenteId": 2,
-    "anio": 2025,
-    "cuatrimestre": 2
-  },
-  {
-    "alumnoId": 1,
-    "materiaId": "MAT-1",
-    "comision": "A",
-    "parciales": { "p1": 2, "p2": 4, "p3": 3 },
-    "estado": "Desaprobado",
-    "observacion": "Debe recursar",
-    "docenteId": 1,
-    "anio": 2023,
-    "cuatrimestre": 2
-  }
+  { "alumnoId": 1,  "materiaId": "MAT-1",  "comision": "A", "parciales": { "p1": 8, "p2": 10, "p3": null }, "estado": "En curso",  "observacion": "Regular",                "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 2,  "materiaId": "MAT-1",  "comision": "A", "parciales": { "p1": 7, "p2": 6,  "p3": null }, "estado": "En curso",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 3,  "materiaId": "MAT-1",  "comision": "A", "parciales": { "p1": 9, "p2": 8,  "p3": 9    }, "estado": "Aprobado",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 4,  "materiaId": "MAT-1",  "comision": "A", "parciales": { "p1": 5, "p2": 7,  "p3": 6    }, "estado": "En curso",  "observacion": "Rinde recup. p1",         "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+
+  { "alumnoId": 5,  "materiaId": "MAT-1",  "comision": "B", "parciales": { "p1": 6, "p2": 6,  "p3": 7    }, "estado": "En curso",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 6,  "materiaId": "MAT-1",  "comision": "B", "parciales": { "p1": 9, "p2": 9,  "p3": null }, "estado": "En curso",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 10, "materiaId": "MAT-1",  "comision": "B", "parciales": { "p1": 7, "p2": 8,  "p3": 8    }, "estado": "Aprobado",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+
+  { "alumnoId": 1,  "materiaId": "PROG-1", "comision": "B", "parciales": { "p1": 9, "p2": 8,  "p3": 10   }, "estado": "Aprobado",  "observacion": "",                        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 2,  "materiaId": "PROG-1", "comision": "B", "parciales": { "p1": 6, "p2": 7,  "p3": null }, "estado": "En curso",  "observacion": "Recuperatorio p3",        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 5,  "materiaId": "PROG-1", "comision": "B", "parciales": { "p1": 8, "p2": 8,  "p3": 9    }, "estado": "Aprobado",  "observacion": "",                        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 6,  "materiaId": "PROG-1", "comision": "B", "parciales": { "p1": 5, "p2": 6,  "p3": 6    }, "estado": "En curso",  "observacion": "",                        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+
+  { "alumnoId": 7,  "materiaId": "PROG-1", "comision": "A", "parciales": { "p1": 7, "p2": 7,  "p3": 8    }, "estado": "En curso",  "observacion": "",                        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 8,  "materiaId": "PROG-1", "comision": "A", "parciales": { "p1": 9, "p2": 9,  "p3": 9    }, "estado": "Aprobado",  "observacion": "",                        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 9,  "materiaId": "PROG-1", "comision": "A", "parciales": { "p1": 6, "p2": 6,  "p3": 7    }, "estado": "En curso",  "observacion": "",                        "docenteId": 2, "anio": 2025, "cuatrimestre": 2 },
+
+  { "alumnoId": 3,  "materiaId": "BD-1",   "comision": "C", "parciales": { "p1": 8, "p2": 7,  "p3": 8    }, "estado": "Aprobado",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 4,  "materiaId": "BD-1",   "comision": "C", "parciales": { "p1": 5, "p2": 6,  "p3": 6    }, "estado": "En curso",  "observacion": "",                        "docenteId": 1, "anio": 2025, "cuatrimestre": 2 },
+  { "alumnoId": 7,  "materiaId": "BD-1",   "comision": "A", "parciales": { "p1": 6, "p2": 7,  "p3": 7    }, "estado": "En curso",  "observacion": "",                        "docenteId": 3, "anio": 2025, "cuatrimestre": 2 }
 ]

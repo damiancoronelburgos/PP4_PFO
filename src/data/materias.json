@@ -1,26 +1,9 @@
 [
-{
-    "id": "MAT-1",
-    "nombre": "Matemáticas",
-    "docenteId": 1,
-    "comision": "A",
-    "horario": "Lunes 19hs",
-    "cupo": 20
-  },
-  
-  {
-    "id": "PROG-1",
-    "nombre": "Introducción a Programación",
-    "docenteId": 2,
-    "comision": "B",
-    "horario": "Miércoles 18hs",
-    "cupo": 30
-  },
+  { "id": "MAT-1",  "nombre": "Matemáticas",                 "docenteId": 1, "comision": "A", "horario": "Lunes 19hs",     "cupo": 20 },
+  { "id": "PROG-1", "nombre": "Introducción a Programación", "docenteId": 2, "comision": "B", "horario": "Miércoles 18hs", "cupo": 30 },
+  { "id": "BD-1",   "nombre": "Base de Datos",               "docenteId": 1, "comision": "C", "horario": "Jueves 20hs",    "cupo": 25 },
 
-  { "id": "BD-1",
-    "nombre": "Base de Datos", 
-     "docenteId": 1,
-      "comision": "C",
-       "horario": "Jueves 20hs",
-          "cupo": 25 } 
+  { "id": "MAT-1",  "nombre": "Matemáticas",                 "docenteId": 1, "comision": "B", "horario": "Martes 18hs",    "cupo": 25 },
+  { "id": "PROG-1", "nombre": "Introducción a Programación", "docenteId": 2, "comision": "A", "horario": "Lunes 20hs",      "cupo": 30 },
+  { "id": "BD-1",   "nombre": "Base de Datos",               "docenteId": 3, "comision": "A", "horario": "Viernes 19hs",   "cupo": 25 }
 ]
