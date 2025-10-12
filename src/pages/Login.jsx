@@ -43,7 +43,7 @@ export default function Login() {
         return docentes.find((d) => d.usuario === username);
       case "preceptor":
         return preceptores.find((p) => p.usuario === username);
-      case "administrador":
+      case "administracion":
         return administradores.find((adm) => adm.usuario === username);
       default:
         return null;
