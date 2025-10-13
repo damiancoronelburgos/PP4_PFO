@@ -1,0 +1,459 @@
+.administrador-container {
+    min-height: 100vh;
+    display: flex;
+    
+    background-image: url('/prisma.png'); 
+    background-size: cover;          
+    background-position: center center; 
+    background-attachment: fixed;    
+}
+.bienvenida {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6em;
+    color: #2c3e50;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding: 25px 30px;
+    margin: 40px auto;
+    max-width: 600px;
+    background: linear-gradient(135deg, #eceff1 0%, #cfd8dc 100%);
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 
+                0 3px 6px rgba(0, 0, 0, 0.10);
+    border: 1px solid rgba(180, 195, 205, 0.6);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bienvenida:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.20),
+                0 5px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* Variables para consistencia */
+:root {
+    --color-fondo-panel-claro: rgba(79, 77, 77, 0.85); /* Blanco semi-transparente */
+    --color-fondo-panel-oscuro: rgba(237, 231, 231, 0.4);       /* Negro semi-transparente */
+    --color-texto-oscuro: #f1eded;
+    --color-texto-claro: #8d8787;
+    --color-borde-gris: #cccccc;
+    --color-gris-boton: rgba(202, 206, 210, 0.7);
+}
+
+/* 1. Contenedor Principal de la Gestión */
+.contenido-gestion {
+    flex-grow: 1; 
+    padding: 20px 40px;
+    font-family: Arial, sans-serif;
+
+}
+
+/* 2. Cabecera del Instituto */
+.cabecera-instituto {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    background: var(--color-fondo-panel-claro);
+    padding: 10px 20px;
+    border-radius: 8px;
+    width: fit-content;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.logo-instituto {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    background-image: url('/Logo.png'); 
+    background-size: contain; 
+    background-repeat: no-repeat; 
+    background-position: center center;
+    background-color: transparent;
+    border-radius: 5px;
+}
+
+.nombre-instituto {
+    color: var(--color-texto-oscuro);
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.titulo-gestion {
+    color: var(--color-texto-claro); 
+    font-size: 2em;
+    font-weight: 300;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* 3. Panel de Acciones y Formulario (El cuadro exterior negro/gris) */
+.panel-acciones {
+    position: relative;
+    background: var(--color-fondo-panel-oscuro); 
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Botón Eliminar flotante */
+.boton-eliminar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: var(--color-fondo-panel-claro);
+    color: #cccccc;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(222, 66, 66, 0.5); 
+}
+
+.boton-eliminar:hover {
+    background-color: rgba(108, 117, 125, 1);
+}
+
+/* Controles de "Agregar" y "Modificar" */
+.controles-principales {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.boton-accion {
+    background-color: var(--color-fondo-panel-claro);
+    color: var(--color-texto-oscuro);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.boton-accion:hover {
+    background-color: rgb(108, 106, 106);
+}
+
+/* 4. Formulario/Vista de Datos (El cuadro interior blanco) */
+.formulario-gestion {
+    background: var(--color-fondo-panel-claro); 
+    padding: 25px;
+    border-radius: 8px;
+    position: relative;
+}
+
+/* Estilos para las etiquetas/placeholders superiores (DNI, Nombre, Apellido, Curso) */
+.campos-labels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px;
+    padding: 0 5px 5px 5px; 
+    font-weight: bold;
+    color: var(--color-texto-oscuro);
+}
+
+/* Grid para los campos de texto */
+.campos-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px;
+    margin-bottom: 50px; 
+}
+
+.campo-texto {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--color-borde-gris);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+}
+
+/* Botón Volver */
+.boton-volver {
+    position: absolute;
+    bottom: 5px;
+    right: 25px;
+    background-color: rgba(255, 255, 255, 0.7); 
+    color: var(--color-texto-oscuro);
+    border: 1px solid var(--color-borde-gris);
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.boton-volver:hover {
+    background-color: rgba(240, 240, 240, 1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*esto es para constancias*/
+/* --- ESTILOS ESPECÍFICOS PARA EMITIR CONSTANCIAS --- */
+
+/* Contenedor principal del formulario de constancias, mantiene la estructura de panel */
+.panel-emision-constancia {
+    /* Reutilizamos el fondo oscuro para el efecto de sombra */
+    background: var(--color-fondo-panel-oscuro); 
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    /* Adaptamos el ancho para que se vea similar a la imagen */
+    max-width: 800px; 
+    margin: 0 auto; /* Centrar en el contenido de gestión */
+}
+
+/* Formulario interior, el bloque blanco principal */
+.formulario-emision {
+    background: var(--color-fondo-panel-claro); 
+    padding: 25px;
+    border-radius: 8px;
+    display: grid;
+    /* Usamos un grid de 2 columnas para organizar Nombre/Apellido, Carrera/Comisión */
+    grid-template-columns: 1fr; 
+    gap: 15px;
+}
+
+/* Clases generales de formulario */
+.label-form {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--color-texto-oscuro);
+}
+
+.input-form {
+    width: 100%;
+    padding: 10px;
+    /* QUITAMOS EL BORDE */
+    border: none; 
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+    /* COLOR DE FONDO MÁS CLARO Y PROFESIONAL */
+    background-color: #d5d5d5; /* Un gris muy sutil, similar al de los diseños */ 
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.input-form:focus {
+    /* Mantener un buen feedback visual al hacer clic */
+    background-color: #ffffff;
+    box-shadow: 0 0 0 0.15rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Contenedor para campos que ocupan dos columnas (DNI, Tipo) */
+.campo-completo {
+    grid-column: 1 / -1; /* Ocupa todo el ancho */
+}
+
+/* Contenedor para las filas de 2 campos (Nombre/Apellido, Carrera/Comision) */
+.campos-fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Divide la fila en dos */
+    gap: 20px;
+}
+
+/* Ajuste específico para el campo 'Tipo' para alinearlo mejor */
+.tipo-field .input-form {
+    height: 38px;
+}
+
+/* Bloque de Resumen y Botón */
+.bloque-resumen {
+    grid-column: 1 / -1; /* Ocupa todo el ancho */
+    background-color: #f5f5f5; /* Fondo ligeramente gris para el resumen */
+    padding: 20px;
+    border-radius: 6px;
+    margin-top: 15px;
+    position: relative;
+    /* Estilo para los textos de resumen */
+    font-size: 1.1em;
+}
+
+.datos-resumen p {
+    margin: 5px 0;
+    color: var(--color-texto-oscuro);
+}
+
+/* Botón 'Emitir comprobante' */
+.boton-emitir {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: #343a40; /* Color oscuro similar al diseño */
+    color: var(--color-texto-claro);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.boton-emitir:hover {
+    background-color: #495057;
+}
+
+/*esto es para notificaciones*/
+
+/* --- ESTILOS ESPECÍFICOS PARA EMITIR COMUNICADO (NOTIFICACIONES) --- */
+
+/* Contenedor principal del formulario de comunicado (similar al de constancias) */
+.panel-emision-comunicado {
+    background: var(--color-fondo-panel-oscuro); 
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    /* Usamos un max-width similar para mantener el centrado */
+    max-width: 800px; 
+    margin: 0 auto; 
+}
+
+/* Formulario interior, el bloque blanco principal */
+.formulario-comunicado {
+    background: var(--color-fondo-panel-claro); 
+    padding: 25px;
+    border-radius: 8px;
+}
+
+.subtitulo-destinatario {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: var(--color-texto-oscuro);
+}
+
+.leyenda-filtro {
+    font-size: 0.8em;
+    font-weight: normal;
+    color: #666;
+}
+
+/* Contenedor de los filtros de Carrera, Comisión, Otros */
+.filtros-comunicado {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Espacio entre las filas de filtros */
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd; /* Separador sutil */
+}
+
+.campo-simple {
+    display: grid;
+    grid-template-columns: 100px 1fr; /* Columna de label pequeña, input grande */
+    align-items: center;
+}
+
+.label-filtro {
+    font-weight: bold;
+    color: var(--color-texto-oscuro);
+}
+
+.input-filtro {
+    padding: 8px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #d5d5d5; /* Fondo gris claro */
+    box-sizing: border-box;
+}
+
+/* Área de Mensaje */
+.caja-mensaje {
+    position: relative;
+    padding: 10px 0;
+}
+
+.label-mensaje {
+    display: block;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--color-texto-oscuro);
+}
+
+.textarea-comunicado {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 4px;
+    resize: none; /* Evita que el usuario cambie el tamaño manualmente */
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    font-size: 1em;
+    background-color: #d5d5d5; /* Fondo gris claro */
+    margin-bottom: 10px;
+}
+
+/* Botón Enviar */
+.boton-enviar {
+    position: absolute;
+    bottom: -20px; 
+    right: 0px;
+    background-color: #343a40; /* Color oscuro similar al diseño */
+    color: var(--color-texto-claro);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.boton-enviar:hover {
+    background-color: #495057;
+}
+
+/*esto es para oferta academica*/
+/* --- ESTILOS ESPECÍFICOS PARA OFERTA ACADÉMICA (5 columnas) --- */
+
+.campos-oferta {
+    grid-template-columns: 1fr 2fr 1fr 1fr 1fr !important; 
+    
+    gap: 15px;
+}
+
+
+/*constancias*/
+.pdf-content-hidden {
+    /* Mueve el elemento lejos de la pantalla, pero permite que html2canvas lo capture */
+    position: absolute;
+    top: -5000px; /* Usa 'top' en lugar de 'left' */
+    left: 0;
+    z-index: -1;
+    /* MUY IMPORTANTE: Asegúrate de que el ancho sea fijo para el A4 */
+    width: 21cm; 
+    height: 29.7cm;
+    background-color: white; 
+    color: black;
+}
+
+

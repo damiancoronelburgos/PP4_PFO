@@ -31,7 +31,7 @@
   "tipo": "inscripcion",
   "leida": false,
   "favorito": false
-},
+  },
   {
     "id": 4,
     "destino": "todos",
@@ -41,5 +41,26 @@
     "tipo": "sistema",
     "leida": false,
     "favorito": false
+  },
+  {
+  "id": 5,
+  "destino": "preceptor",
+  "fecha": "2025-05-03",
+  "titulo": "Nuevas justificaciones pendientes",
+  "detalle": "Hay 3 solicitudes de justificación para revisar.",
+  "tipo": "justificacion",
+  "leida": false,
+  "favorito": false
+  },
+  {
+  "id": 6,
+  "destino": "preceptor",
+  "usuarioId": 1,
+  "fecha": "2025-05-04",
+  "titulo": "Recordatorio de asistencia",
+  "detalle": "Cargar asistencia de PROG-1_B antes de las 22:00.",
+  "tipo": "asistencia",
+  "leida": false,
+  "favorito": false
   }
 ]

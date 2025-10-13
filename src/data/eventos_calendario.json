@@ -1,0 +1,6 @@
+[
+  { "id": 1, "fecha": "2025-10-10", "titulo": "Entrega TP 2", "comision": "IALP_1A" },
+  { "id": 2, "fecha": "2025-10-20", "titulo": "Primer parcial", "comision": "IALP_2A" },
+  { "id": 3, "fecha": "2025-10-06", "titulo": "Reunión de cátedra", "comision": "MAT1_A" },
+  { "id": 4, "fecha": "2025-10-27", "titulo": "Entrega Informe", "comision": "PROG1_B" }
+]

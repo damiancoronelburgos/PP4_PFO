@@ -1,6 +1,3 @@
 [
-  { "id": 1, 
-  "nombre": "federico",
-   "usuario": "preceptor4",
-    "rol": "preceptor" }
+  { "id": 1, "nombre": "federico", "usuario": "preceptor4", "rol": "preceptor", "comisiones": ["MAT-1_A", "PROG-1_B"] }
 ]

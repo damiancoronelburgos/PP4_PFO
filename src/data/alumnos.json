@@ -1,13 +1,13 @@
 [
-  { "id": 1,
-   "nombre": "sabrina",
-   "apellido":"choque",
-   "edad":"39",
-   "fecha de nacimiento":"19/05/1986",
-   "dni":"32328252",
-   "telefono":"1130110713",
-   "email":"sabrinaechoque@gmail.com",
-    "usuario": "alumno1",
-    "contraseña":"1111",
-     "rol": "alumno" }
+  { "id": 1, "nombre": "sabrina", "apellido": "choque", "edad": "39", "fecha de nacimiento": "19/05/1986", "dni": "32328252", "telefono": "1130110713", "email": "sabrinaechoque@gmail.com", "usuario": "alumno1", "contraseña": "1111", "rol": "alumno" },
+
+  { "id": 2, "nombre": "juan", "apellido": "perez", "edad": "22", "fecha de nacimiento": "10/03/2003", "dni": "40123456", "telefono": "1145678901", "email": "juan.perez@example.com", "usuario": "alumno2", "contraseña": "1112", "rol": "alumno" },
+  { "id": 3, "nombre": "ana", "apellido": "gomez", "edad": "23", "fecha de nacimiento": "25/07/2002", "dni": "39987654", "telefono": "1145678902", "email": "ana.gomez@example.com", "usuario": "alumno3", "contraseña": "1113", "rol": "alumno" },
+  { "id": 4, "nombre": "luis", "apellido": "fernandez", "edad": "24", "fecha de nacimiento": "12/11/2001", "dni": "38999111", "telefono": "1145678903", "email": "luis.fernandez@example.com", "usuario": "alumno4", "contraseña": "1114", "rol": "alumno" },
+  { "id": 5, "nombre": "maria", "apellido": "lopez", "edad": "22", "fecha de nacimiento": "30/01/2003", "dni": "40111222", "telefono": "1145678904", "email": "maria.lopez@example.com", "usuario": "alumno5", "contraseña": "1115", "rol": "alumno" },
+  { "id": 6, "nombre": "carla", "apellido": "diaz", "edad": "21", "fecha de nacimiento": "18/09/2004", "dni": "42123456", "telefono": "1145678905", "email": "carla.diaz@example.com", "usuario": "alumno6", "contraseña": "1116", "rol": "alumno" },
+  { "id": 7, "nombre": "diego", "apellido": "ramirez", "edad": "25", "fecha de nacimiento": "05/05/2000", "dni": "37999888", "telefono": "1145678906", "email": "diego.ramirez@example.com", "usuario": "alumno7", "contraseña": "1117", "rol": "alumno" },
+  { "id": 8, "nombre": "valentina", "apellido": "torres", "edad": "22", "fecha de nacimiento": "08/08/2003", "dni": "40123999", "telefono": "1145678907", "email": "valentina.torres@example.com", "usuario": "alumno8", "contraseña": "1118", "rol": "alumno" },
+  { "id": 9, "nombre": "nicolas", "apellido": "sosa", "edad": "23", "fecha de nacimiento": "02/02/2002", "dni": "39911222", "telefono": "1145678908", "email": "nicolas.sosa@example.com", "usuario": "alumno9", "contraseña": "1119", "rol": "alumno" },
+  { "id": 10, "nombre": "laura", "apellido": "martinez", "edad": "24", "fecha de nacimiento": "22/12/2001", "dni": "38910001", "telefono": "1145678909", "email": "laura.martinez@example.com", "usuario": "alumno10", "contraseña": "1120", "rol": "alumno" }
 ]

@@ -1,0 +1,51 @@
+.oferta-container {
+  padding: 20px;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  min-height: 400px;
+}
+
+.oferta-container h2 {
+  margin-bottom: 20px;
+  color: #2b2b40;
+}
+
+.agregar-materia {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.agregar-materia input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.agregar-materia button {
+  padding: 8px 16px;
+  background-color: #3498db;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.agregar-materia button:hover {
+  background-color: #2980b9;
+}
+
+.materias-list {
+  list-style: none;
+  padding: 0;
+}
+
+.materias-list li {
+  padding: 10px;
+  background-color: white;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
