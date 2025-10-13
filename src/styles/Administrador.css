@@ -51,14 +51,16 @@
 
 /* 2. Cabecera del Instituto */
 .cabecera-instituto {
+    /* Estilos originales */
     display: flex;
     align-items: center;
     margin-bottom: 30px;
-    background: var(--color-fondo-panel-claro);
+    background: rgba(243, 240, 240, 0.1);
     padding: 10px 20px;
     border-radius: 8px;
     width: fit-content;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 0 auto 30px auto; 
 }
 
 .logo-instituto {
@@ -298,7 +300,7 @@
 
 .datos-resumen p {
     margin: 5px 0;
-    color: var(--color-texto-oscuro);
+    color: #403d3d;
 }
 
 /* Botón 'Emitir comprobante' */
