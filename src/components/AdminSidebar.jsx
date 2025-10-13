@@ -1,5 +1,5 @@
 import React from "react";
-import "../styles/Alumnos.css";
+import "../styles/alumnos.css";
 import "../styles/AdminSidebar.css";
 
 import { useNavigate } from "react-router-dom";

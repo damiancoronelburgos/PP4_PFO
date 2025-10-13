@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/alumnos.css";
 import { Link, Outlet } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 
-export default function DocentePage() {
+export default function Docente() {
   return (
     <div className="p-6 font-sans">
       <h1 className="text-2xl font-bold mb-4">Panel del Docente</h1>
