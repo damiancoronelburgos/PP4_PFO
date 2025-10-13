@@ -9,7 +9,7 @@ import docentes from "../data/docentes.json";
 import preceptores from "../data/preceptores.json";
 import administradores from "../data/administrador.json"; // si tu archivo se llama distinto, ajustá el import
 
-import "../styles/login.css";
+import "../styles/Login.css";
 
 const ROLE_AVATAR = {
   alumno: "/alumno.jpg",
