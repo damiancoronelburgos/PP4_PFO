@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "destino": "alumno",
+    "usuarioId": 1,
+    "fecha": "2025-04-24",
+    "titulo": "Calificación final cargada",
+    "detalle": "Se cargó la calificación final en Introducción a la Programación.",
+    "tipo": "calificacion",
+    "leida": false,
+    "favorito": false
+  },
+  {
+    "id": 2,
+    "destino": "docente",
+    "usuarioId": 1,
+    "fecha": "2025-04-25",
+    "titulo": "Nueva inscripción en su comisión",
+    "detalle": "El alumno/a Sabrina Choque se inscribió a su cátedra de Modelado (Comisión B).",
+    "tipo": "inscripcion",
+    "leida": false,
+    "favorito": false
+  },
+  {
+  "id": 3,
+  "destino": "docente",
+  "usuarioId": 2,           
+  "fecha": "2025-04-29",
+  "titulo": "Nueva inscripción",
+  "detalle": "El alumno/a Sabrina Choque se inscribió a Modelado (Comisión B).",
+  "tipo": "inscripcion",
+  "leida": false,
+  "favorito": false
+  },
+  {
+    "id": 4,
+    "destino": "todos",
+    "fecha": "2025-05-01",
+    "titulo": "Mantenimiento del sistema",
+    "detalle": "El sistema estará en mantenimiento el sábado de 00:00 a 02:00.",
+    "tipo": "sistema",
+    "leida": false,
+    "favorito": false
+  },
+  {
+  "id": 5,
+  "destino": "preceptor",
+  "fecha": "2025-05-03",
+  "titulo": "Nuevas justificaciones pendientes",
+  "detalle": "Hay 3 solicitudes de justificación para revisar.",
+  "tipo": "justificacion",
+  "leida": false,
+  "favorito": false
+  },
+  {
+  "id": 6,
+  "destino": "preceptor",
+  "usuarioId": 1,
+  "fecha": "2025-05-04",
+  "titulo": "Recordatorio de asistencia",
+  "detalle": "Cargar asistencia de PROG-1_B antes de las 22:00.",
+  "tipo": "asistencia",
+  "leida": false,
+  "favorito": false
+  }
+]

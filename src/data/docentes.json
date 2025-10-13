@@ -1,22 +1,5 @@
 [
- {
-    "id": 1,
-    "nombre": "Alejandro",
-    "apellido": "Cubas",
-    "edad": "40",
-    "telefono":"1234567890",
-    "email": "alejandro.gomez@prisma.edu",
-    "usuario": "docente2",
-    "rol": "docente"
-  },
-  {
-    "id": 2,
-    "nombre": "Betik",
-    "apellido": "Enrique",
-    "edad": "48",
-    "telefono": "1132456789",
-    "email": "betik.enrique@prisma.edu",
-    "usuario": "docente3",
-    "rol": "docente"
-  }
+  { "id": 1, "nombre": "Alejandro", "apellido": "Cubas", "edad": "40", "telefono": "1234567890", "email": "alejandro.gomez@prisma.edu", "usuario": "docente2", "rol": "docente" },
+  { "id": 2, "nombre": "Betik", "apellido": "Enrique", "edad": "48", "telefono": "1132456789", "email": "betik.enrique@prisma.edu", "usuario": "docente3", "rol": "docente" },
+  { "id": 3, "nombre": "Carolina", "apellido": "Ruiz", "edad": "38", "telefono": "1187654321", "email": "carolina.ruiz@prisma.edu", "usuario": "docente4", "rol": "docente" }
 ]

@@ -39,7 +39,7 @@
 .alumnos-page .brand {
   position: fixed;
   top: 20px;
-  left: calc(280px + 580px); /* si luego querés mover, ajustá este valor */
+  left: calc(480px + 80px); /* si luego querés mover, ajustá este valor */
   transform: none;
   display: flex;
   align-items: center;
@@ -109,43 +109,67 @@
   margin: 0;
 }
 
-/* Menú lateral (sin rectángulos, con icono) */
-.alumnos-page .sb-menu {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 6px;
+/* Menú lateral */
+.alumnos-page .sb-menu{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:6px;
 }
-.alumnos-page .sb-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 12px 6px 12px;
-  margin: 0 12px;
-  color: #eaeaea;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-shadow: 0 1px 2px rgba(0,0,0,.35);
-  transition: color .15s ease, transform .05s ease, opacity .15s ease;
-}
-.alumnos-page .sb-item:hover { color: #ffffff; opacity: .95; }
-.alumnos-page .sb-item.is-active { color: #00AEEF; }
 
-.alumnos-page .sb-item__icon {
-  width: 18px; height: 18px; flex: 0 0 18px;
-  -webkit-mask: url("/lapiz.png") center/contain no-repeat;
-          mask: url("/lapiz.png") center/contain no-repeat;
-  background-color: #ffffff; /* blanco por defecto */
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
-  opacity: .95;
+.alumnos-page .sb-item{
+  position: relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:4px 12px 6px 12px;
+  margin:0 12px;
+  color:#eaeaea;
+  text-decoration:none;
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:.2px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+  transition:color .15s ease, transform .05s ease, opacity .15s ease;
 }
-.alumnos-page .sb-item.is-active .sb-item__icon { background-color: #00AEEF; }
+
+.alumnos-page .sb-item:hover{ color:#ffffff; opacity:.95; }
+.alumnos-page .sb-item.is-active{ color:#00AEEF; }
+
+.alumnos-page .sb-item__icon{
+  width:18px; height:18px; flex:0 0 18px;
+  -webkit-mask:url("/lapiz.png") center/contain no-repeat;
+          mask:url("/lapiz.png") center/contain no-repeat;
+  background-color:#ffffff;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  opacity:.95;
+}
+.alumnos-page .sb-item.is-active .sb-item__icon{ background-color:#00AEEF; }
+
+/* ===== Contador circular (badge) ===== */
+.alumnos-page .sb-item .counter{
+  margin-left:auto;                /* empuja el contador a la derecha */
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#ff3b30;              /* rojo estilo notificación */
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  box-shadow:0 4px 10px rgba(255,59,48,.25);
+  transition:transform .08s ease, filter .15s ease, opacity .15s ease;
+}
+.alumnos-page .sb-item:hover .counter{ transform:translateY(-1px); }
+.alumnos-page .sb-item.is-disabled .counter{ opacity:.45; }
 
 /* Footer + botón Salir */
 .alumnos-page .sb-footer {
@@ -270,7 +294,7 @@
 
 /* Mensaje de éxito */
 .alumnos-page .enroll-success{
-  text-align:center; color:#ff3366; font-weight:800; margin-top:6px;
+  text-align:center; color:#8ef0fd; font-weight:800px; margin-top:10px;
 }
 
 /* Responsive simple */
@@ -429,4 +453,145 @@
 }
 .btn-success:hover {
   background: #a0d49f;
+}
+/* ========== NOTIFICACIONES ========== */
+.notes-wrap{
+  position: relative;
+  z-index: 1;
+  margin-left: calc(280px + 40px);
+  margin-right: 40px;
+  padding-top: 90px;
+  padding-bottom: 40px;
+}
+.notes-card{
+  background: rgba(12,12,12,.55);
+  border-radius: 18px;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+  padding: 18px 18px 24px;
+  color: #fff;
+}
+.notes-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 14px;
+  padding: 6px 6px 14px;
+}
+.notes-title{
+  margin:0; font-size: clamp(22px,2.8vw,34px); font-weight: 800;
+}
+.notes-toolbar{
+  display:flex; align-items:center; gap: 10px; flex-wrap: wrap;
+}
+
+/* Filtros */
+.pill-group { display:inline-flex; gap:6px; }
+.pill{
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.25);
+  color: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+}
+.pill.is-active{
+  background: #00AEEF;
+  color: #08212c;
+  border-color: #00AEEF;
+}
+
+.notes-search{
+  display:flex; align-items:center; gap:10px;
+  margin: 8px 6px 14px;
+}
+.notes-input{
+  height: 34px; padding: 0 12px; border-radius: 10px; border: none;
+  width: 400px;
+}
+
+.badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 6px 10px; border-radius: 999px; font-weight: 800;
+  background: rgba(255,255,255,.12);
+}
+.badge-dot{
+  width:8px; height:8px; border-radius:50%; background:#ff5a5f; display:inline-block;
+}
+
+/* Tarjetas */
+.note-item{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-left: 6px solid rgba(0,174,239,.7);
+  border-radius: 12px;
+  padding: 12px 12px;
+  margin: 10px 2px;
+}
+.note-item.unread{ border-left-color: #ffb703; }
+.note-head{
+  display: grid;
+  grid-template-columns: auto 1fr auto auto; /* fav | title | date | actions */
+  align-items: center;
+  gap: 10px;
+}
+.note-title{
+  font-weight: 800; margin: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.note-date{ opacity:.9; font-weight:700; }
+
+/* Acciones + iconos */
+.note-actions{ display: inline-flex; gap:8px; align-items: center; }
+
+.note-fav-btn{
+  width: 32px; height: 32px; border: none; background: transparent;
+  border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform .1s ease, filter .15s ease;
+}
+.note-fav-btn:active{ transform: translateY(1px); }
+.note-fav-icon{ width: 18px; height: 18px; object-fit: contain; display: block; }
+
+.note-icon-btn{
+  width: 32px; height: 32px; border: none; background: transparent; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.note-status-icon, .note-eye-icon{
+  width: 18px; height: 18px; object-fit: contain; display: block;
+}
+/* Botón genérico para acciones de nota */
+.note-btn{
+  border: none;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  background: rgba(0,0,0,.25);
+  color: #eaeaea;
+  transition: transform .05s ease, filter .15s ease, background .15s ease;
+}
+
+/* Estilo "Eliminar" — pastilla roja */
+.note-btn.danger{
+  background: #ff5a5f;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(255, 90, 95, .28);
+  min-height: 32px;   /* opcional para altura consistente */
+}
+
+.note-btn.danger:hover{
+  filter: brightness(1.05);
+}
+
+.note-btn.danger:active{
+  transform: translateY(1px);
+}
+
+.note-detail{
+  margin-top: 8px; line-height:1.4; color:#f8f7f7;
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .notes-wrap{ margin-left: 300px; margin-right: 16px; }
 }

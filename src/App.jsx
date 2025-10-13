@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./pages/Login.jsx"
-import Alumnos from "./pages/Alumnos.jsx"
-import Administracion from "./pages/Administrador.jsx";
+import Login from "./pages/Login.jsx";
+import Alumnos from "./pages/Alumnos.jsx";
+import Preceptor from "./pages/Preceptor.jsx";
 import Administrador from "./pages/Administrador.jsx";
 
 export default function App() {
@@ -10,9 +10,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/alumno" element={<Alumnos />} />
-        <Route path="/administrador" element={<Administrador/>} />
+        <Route path="/preceptor" element={<Preceptor />} />
+        <Route path="/administrador" element={<Administrador />} />
       </Routes>
     </BrowserRouter>
   );
 }
-

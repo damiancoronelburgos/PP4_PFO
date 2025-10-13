@@ -1,0 +1,7 @@
+[
+  { "id": 1001, "alumnoId": 2,  "materiaId": "MAT-1",  "comision": "A", "fecha": "2025-09-19", "motivo": "Turno médico", "estado": "pendiente", "documentoUrl": "/docs/1001.pdf" },
+  { "id": 1002, "alumnoId": 5,  "materiaId": "PROG-1", "comision": "B", "fecha": "2025-09-18", "motivo": "Enfermedad",   "estado": "pendiente", "documentoUrl": "/docs/1002.pdf" },
+  { "id": 1003, "alumnoId": 4,  "materiaId": "BD-1",   "comision": "C", "fecha": "2025-09-17", "motivo": "Familiar",     "estado": "aprobada",  "documentoUrl": "/docs/1003.pdf" },
+  { "id": 1004, "alumnoId": 6,  "materiaId": "MAT-1",  "comision": "B", "fecha": "2025-09-19", "motivo": "Trabajo",      "estado": "pendiente", "documentoUrl": "/docs/1004.pdf" },
+  { "id": 1005, "alumnoId": 10, "materiaId": "MAT-1",  "comision": "B", "fecha": "2025-09-18", "motivo": "Otro",         "estado": "rechazada", "documentoUrl": "/docs/1005.pdf" }
+]
