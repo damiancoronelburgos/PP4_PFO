@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/alumnos.css";
 
@@ -10,11 +10,47 @@ import autoTable from "jspdf-autotable";
 import materiasData from "../data/materias.json";
 import calificacionesData from "../data/calificaciones.json";
 import notificacionesData from "../data/notificaciones.json";
+import alumnosData from "../data/alumnos.json"; 
+
+// helper chiquito
+const cap = (s = "") => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Alumnos() {
   const navigate = useNavigate();
   const [active, setActive] = useState(null);
   const alumnoId = 1; // Sabrina (alumno1)
+
+  // === Alumno desde JSON ===
+  const alumno = useMemo(
+    () => alumnosData.find((a) => a.id === alumnoId),
+    [alumnoId]
+  );
+
+  // Avatar (preview si eligen una foto)
+  const [avatarSrc, setAvatarSrc] = useState(alumno?.foto || "/alumno.jpg");
+  const fileRef = useRef(null);
+  const choosePhoto = () => fileRef.current?.click();
+  const onPhotoChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setAvatarSrc(reader.result);
+    reader.readAsDataURL(f);
+  };
+
+  // Contraseña (demo local)
+  const [showPwd, setShowPwd] = useState(false);
+  const [pwd1, setPwd1] = useState("");
+  const [pwd2, setPwd2] = useState("");
+  const savePassword = (e) => {
+    e.preventDefault();
+    if (!pwd1 || !pwd2) return alert("Completá ambos campos.");
+    if (pwd1 !== pwd2) return alert("Las contraseñas no coinciden.");
+    alert("Contraseña actualizada (demo).");
+    setShowPwd(false);
+    setPwd1("");
+    setPwd2("");
+  };
 
   const items = [
     { id: "inscripcion", label: "Inscripción a materias" },
@@ -23,7 +59,10 @@ export default function Alumnos() {
     { id: "notificaciones", label: "Notificaciones" },
   ];
 
-  const handleLogout = () => navigate("/");
+  const handleLogout = () => {
+    const ok = window.confirm("¿Seguro que deseas cerrar sesión?");
+    if (ok) navigate("/");
+  };
 
   // ====== Mapeo de materias ======
   const materiaById = useMemo(
@@ -119,7 +158,9 @@ export default function Alumnos() {
     doc.setFontSize(13);
     doc.text("Certificado de Historial Académico", 35, 24);
 
-    const alumnoNombre = "Sabrina Choque";
+    const alumnoNombre =
+      (alumno ? `${cap(alumno.nombre)} ${cap(alumno.apellido)}` : "—") ||
+      "—";
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.text(
@@ -238,8 +279,16 @@ export default function Alumnos() {
   }, [noteFilter, notesMode, dismissed, role, userId, favSet, readSet]);
 
   const unreadCount = useMemo(
-    () => notesAll.filter((n) => !readSet.has(n.id)).length,
-    [notesAll, readSet]
+    () =>
+      notificacionesData.filter(
+        (n) =>
+          !dismissed.has(n.id) &&
+          (n.destino === "todos" ||
+            (n.destino === role &&
+              (n.usuarioId == null || n.usuarioId === userId))) &&
+          !readSet.has(n.id)
+      ).length,
+    [dismissed, readSet, role, userId]
   );
 
   const markAsRead = (id) => {
@@ -286,6 +335,109 @@ export default function Alumnos() {
 
   // ====== RENDER ======
   const renderPanel = () => {
+    // --- PERFIL ---
+    if (active === "perfil") {
+      const displayName = alumno
+        ? `${cap(alumno.nombre)} ${cap(alumno.apellido)}`
+        : "—";
+      const email = alumno?.email || "—";
+      const roles = alumno ? [alumno.rol || "alumno"] : ["alumno"];
+
+      return (
+        <div className="profile-wrap">
+          <div className="enroll-card profile-card">
+            <div className="enroll-header">
+              <h2 className="enroll-title">Mi Perfil</h2>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
+            </div>
+
+            <div className="profile-grid">
+              {/* Avatar + cambiar foto */}
+              <div className="profile-col profile-col--avatar">
+                <img
+                  src={avatarSrc}
+                  alt={displayName}
+                  className="profile-avatar-lg"
+                />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPhotoChange}
+                  hidden
+                />
+                <button className="btn btn--success" onClick={choosePhoto}>
+                  Cambiar foto de perfil
+                </button>
+              </div>
+
+              {/* Datos principales + contraseña */}
+              <div className="profile-col profile-col--info">
+                <h3 className="profile-name">{displayName}</h3>
+                <div className="profile-email">{email}</div>
+
+                {!showPwd ? (
+                  <div className="mt-16">
+                    <button
+                      className="btn btn--danger"
+                      onClick={() => setShowPwd(true)}
+                    >
+                      Cambiar contraseña
+                    </button>
+                  </div>
+                ) : (
+                  <form className="pwd-form" onSubmit={savePassword}>
+                    <input
+                      type="password"
+                      className="grades-input"
+                      placeholder="Nueva contraseña"
+                      value={pwd1}
+                      onChange={(e) => setPwd1(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      className="grades-input"
+                      placeholder="Repetir contraseña"
+                      value={pwd2}
+                      onChange={(e) => setPwd2(e.target.value)}
+                    />
+                    <div className="row gap-12">
+                      <button className="btn btn--success" type="submit">
+                        Guardar
+                      </button>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => {
+                          setShowPwd(false);
+                          setPwd1("");
+                          setPwd2("");
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Roles */}
+              <div className="profile-col profile-col--roles">
+                <h4 className="profile-subtitle">Roles</h4>
+                <ul className="profile-roles">
+                  {roles.map((r) => (
+                    <li key={r}>{cap(r)}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // --- INSCRIPCIÓN ---
     if (active === "inscripcion") {
       return (
@@ -550,7 +702,9 @@ export default function Alumnos() {
                         <button
                           className={"note-fav-btn" + (isFav ? " is-on" : "")}
                           onClick={() => toggleFav(n.id)}
-                          title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                          title={
+                            isFav ? "Quitar de favoritos" : "Agregar a favoritos"
+                          }
                         >
                           <img
                             src={isFav ? "/favorito.png" : "/nofavorito.png"}
@@ -601,7 +755,9 @@ export default function Alumnos() {
                         </div>
                       </div>
 
-                      {isExpanded && <div className="note-detail">{n.detalle}</div>}
+                      {isExpanded && (
+                        <div className="note-detail">{n.detalle}</div>
+                      )}
                     </div>
                   );
                 })
@@ -627,7 +783,15 @@ export default function Alumnos() {
       <aside className="sidebar">
         <div className="sidebar__inner">
           <div className="sb-profile">
-            <img src="/alumno.jpg" alt="Sabrina Choque" className="sb-avatar" />
+            <button
+              className="sb-gear"
+              onClick={() => setActive("perfil")}
+              title="Editar perfil"
+            >
+              <img src="/perfil.gif" alt="Configuración de perfil" />
+            </button>
+
+            <img src={avatarSrc} alt="Sabrina Choque" className="sb-avatar" />
             <p className="sb-role">Alumno/a</p>
             <p className="sb-name">Sabrina Choque</p>
           </div>
