@@ -1,8 +1,3 @@
-/* === DOCENTE.CSS ===
-   Basado en el estilo de Administrador/Alumnos
-   Adaptado a las vistas del rol Docente
-*/
-
 /* === ESTRUCTURA GENERAL === */
 .docente-container {
   display: flex;
@@ -230,7 +225,7 @@
   background: #ef4444;
 }
 
-/* === SCROLL PERSONALIZADO === */
+/* === SCROLL === */
 .docente-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -246,7 +241,7 @@
 }
 
 
-/* === NOTIFICACIONES DOCENTE (ACTUALIZADA) === */
+/* === NOTIFICACIONES DOCENTE === */
 .lista-notificaciones {
   display: flex;
   flex-direction: column;
