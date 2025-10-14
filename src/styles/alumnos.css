@@ -79,7 +79,9 @@
 }
 
 /* Perfil (avatar + textos) */
+/* Perfil (avatar + textos) */
 .alumnos-page .sb-profile {
+  position: relative;          /* 👈 necesario para anclar el gear aquí */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -90,6 +92,32 @@
   text-align: center;
   text-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
+
+/* Gear  GIF*/
+.alumnos-page .sb-gear{
+  position: absolute;
+  top: 100px;                   /* ajustá a gusto */
+  right: 20px;                 /* ajustá a gusto */
+  width: 43px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  z-index: 3;
+  transition: transform .12s ease;
+}
+.alumnos-page .sb-gear:hover{ transform: scale(1.06); }
+.alumnos-page .sb-gear img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); /* opcional */
+  pointer-events: none;
+}
+
 .alumnos-page .sb-avatar {
   width: 130px;
   height: 130px;
@@ -98,16 +126,70 @@
   border: 3px solid rgba(255,255,255,.9);
   box-shadow: 0 6px 14px rgba(0,0,0,.35);
 }
-.alumnos-page .sb-role {
-  font-size: 25px;
-  opacity: .95;
-  margin: -10px 0 0;
+
+.alumnos-page .sb-role { font-size: 25px; opacity: .95; margin: -10px 0 0; }
+.alumnos-page .sb-name { font-size: 26px; font-weight: 700; margin: 0; }
+
+/* Menú lateral */
+.alumnos-page .sb-menu{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:6px;
 }
-.alumnos-page .sb-name {
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0;
+
+.alumnos-page .sb-item{
+  position: relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:4px 12px 6px 12px;
+  margin:0 12px;
+  color:#eaeaea;
+  text-decoration:none;
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:.2px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+  transition:color .15s ease, transform .05s ease, opacity .15s ease;
 }
+.alumnos-page .sb-item:hover{ color:#ffffff; opacity:.95; }
+.alumnos-page .sb-item.is-active{ color:#00AEEF; }
+
+.alumnos-page .sb-item__icon{
+  width:18px; height:18px; flex:0 0 18px;
+  -webkit-mask:url("/lapiz.png") center/contain no-repeat;
+          mask:url("/lapiz.png") center/contain no-repeat;
+  background-color:#ffffff;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  opacity:.95;
+}
+.alumnos-page .sb-item.is-active .sb-item__icon{ background-color:#00AEEF; }
+
+/* Contador circular (badge) */
+.alumnos-page .sb-item .counter{
+  margin-left:auto;
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#ff3b30;
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  box-shadow:0 4px 10px rgba(255,59,48,.25);
+  transition:transform .08s ease, filter .15s ease, opacity .15s ease;
+}
+.alumnos-page .sb-item:hover .counter{ transform:translateY(-1px); }
+.alumnos-page .sb-item.is-disabled .counter{ opacity:.45; }
 
 /* Menú lateral */
 .alumnos-page .sb-menu{
@@ -594,4 +676,70 @@
 /* Responsive */
 @media (max-width: 980px){
   .notes-wrap{ margin-left: 300px; margin-right: 16px; }
+}
+/* ===== PERFIL ===== */
+.profile-wrap{
+  position: relative;
+  z-index: 1;
+  margin-left: calc(280px + 40px);
+  margin-right: 40px;
+  padding-top: 90px;
+  padding-bottom: 40px;
+}
+
+.profile-card{
+  background: rgba(12,12,12,.55);
+  border-radius: 18px;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+  padding: 18px 18px 24px;
+  color: #fff;
+}
+
+.profile-grid{
+  display: grid;
+  grid-template-columns: 280px 1fr 260px; /* avatar | info | roles */
+  gap: 24px;
+  align-items: start;
+}
+
+.profile-col--avatar{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar-lg{
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,.9);
+  box-shadow: 0 6px 14px rgba(0,0,0,.35);
+}
+
+.profile-name{ margin: 4px 0 4px; font-size: 28px; font-weight: 800; }
+.profile-email{ opacity: .95; }
+
+.pwd-form{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.profile-subtitle{ margin: 8px 0; font-weight: 800; }
+.profile-roles{ margin: 0; padding-left: 18px; }
+
+.btn--success{ background:#2ecc71; color:#0b2618; font-weight:800; }
+.btn--danger{ background:#ff5a5f; color:#fff; font-weight:800; }
+
+/* Responsive */
+@media (max-width: 1100px){
+  .profile-grid{
+    grid-template-columns: 1fr;
+  }
+  .profile-col--avatar{ order: 1; }
+  .profile-col--info{ order: 2; }
+  .profile-col--roles{ order: 3; }
 }
