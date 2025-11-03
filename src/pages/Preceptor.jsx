@@ -27,6 +27,9 @@ const fmtFechaHora = (iso) =>
 const ymd = (d) => d.toISOString().slice(0, 10);
 const pad2 = (n) => String(n).padStart(2, "0");
 
+// ===== Storage de eventos creados por el preceptor =====
+const CAL_STORAGE_KEY = "pp4_preceptor_eventos";
+
 export default function Preceptor() {
   const navigate = useNavigate();
 
@@ -197,12 +200,23 @@ export default function Preceptor() {
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
+  const [calAnimKey, setCalAnimKey] = useState(0); // <- para animar el grid al cambiar mes/año
   const MESES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const DOW_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
+  // Eventos del usuario + persistencia
+  const [eventosUser, setEventosUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(CAL_STORAGE_KEY) || "[]"); } catch { return []; }
+  });
+  useEffect(() => localStorage.setItem(CAL_STORAGE_KEY, JSON.stringify(eventosUser)), [eventosUser]);
+
+  // Merge JSON + usuario
+  const allEventos = useMemo(() => ([...(eventosRaw || []), ...eventosUser]), [eventosUser]);
+
+  // Cálculos calendario (usando allEventos)
   const eventosMes = useMemo(
-    () => (eventosRaw || []).filter((e) => e.fecha.startsWith(`${calYear}-${pad2(calMonth + 1)}`)),
-    [calYear, calMonth]
+    () => (allEventos || []).filter((e) => e.fecha.startsWith(`${calYear}-${pad2(calMonth + 1)}`)),
+    [allEventos, calYear, calMonth]
   );
 
   const eventosPorDia = useMemo(() => {
@@ -224,20 +238,69 @@ export default function Preceptor() {
 
   const years = useMemo(() => {
     const base = new Set([today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1]);
-    (eventosRaw || []).forEach((e) => base.add(Number(e.fecha.slice(0, 4))));
+    (allEventos || []).forEach((e) => base.add(Number(e.fecha.slice(0, 4))));
     return Array.from(base).sort((a, b) => a - b);
-  }, [today]);
+  }, [today, allEventos]);
 
   const proximosEventos = useMemo(() => {
     const start = todayISO;
     const endDate = new Date(todayISO);
     endDate.setDate(endDate.getDate() + 21);
     const end = ymd(endDate);
-    return (eventosRaw || [])
+    return (allEventos || [])
       .filter((e) => e.fecha >= start && e.fecha <= end)
       .sort((a, b) => a.fecha.localeCompare(b.fecha))
       .slice(0, 6);
-  }, [todayISO]);
+  }, [todayISO, allEventos]);
+
+  // === Modal de alta/edición de eventos ===
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("add"); // 'add' | 'edit' | 'view'
+  const emptyDraft = useMemo(
+    () => ({ id: null, fecha: todayISO, comision: comisionesOptions[0] || "", titulo: "", user: true }),
+    [todayISO, comisionesOptions]
+  );
+  const [draft, setDraft] = useState(emptyDraft);
+  useEffect(() => { if (!isModalOpen) setDraft(emptyDraft); }, [isModalOpen, emptyDraft]);
+
+  const openAddModal = (isoDate) => {
+    setModalMode("add");
+    setDraft({ id: null, fecha: isoDate || todayISO, comision: comisionesOptions[0] || "", titulo: "", user: true });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (ev) => {
+    if (ev.user) {
+      setModalMode("edit");
+      setDraft({ id: ev.id, fecha: ev.fecha, comision: ev.comision, titulo: ev.titulo, user: true });
+    } else {
+      setModalMode("view");
+      setDraft({ id: ev.id ?? null, fecha: ev.fecha, comision: ev.comision, titulo: ev.titulo, user: false });
+    }
+    setIsModalOpen(true);
+  };
+
+  const saveDraft = () => {
+    if (!draft.titulo.trim()) return alert("Ingresá un título.");
+    if (!draft.fecha) return alert("Elegí una fecha.");
+    if (!draft.comision) return alert("Elegí una comisión.");
+    if (!comisionesOptions.includes(draft.comision)) return alert("La comisión seleccionada no es válida.");
+    if (modalMode === "add") {
+      const nuevo = { ...draft, id: Date.now(), user: true };
+      setEventosUser((prev) => [...prev, nuevo]);
+    } else if (modalMode === "edit") {
+      setEventosUser((prev) =>
+        prev.map((e) => (e.id === draft.id ? { ...e, fecha: draft.fecha, comision: draft.comision, titulo: draft.titulo } : e))
+      );
+    }
+    setIsModalOpen(false);
+  };
+
+  const deleteDraft = () => {
+    if (modalMode !== "edit") return;
+    setEventosUser((prev) => prev.filter((e) => e.id !== draft.id));
+    setIsModalOpen(false);
+  };
 
   // ===== Comunicaciones =====
   const [commsSubject, setCommsSubject] = useState("");
@@ -428,7 +491,7 @@ ${commsMsg}`);
                       </thead>
                       <tbody>
                         {proximosEventos.map((ev) => (
-                          <tr key={ev.id}>
+                          <tr key={`${ev.id ?? ev.fecha}-${ev.titulo}`}>
                             <td>{fmtFecha(ev.fecha)}</td>
                             <td>{ev.titulo}</td>
                             <td>{ev.comision}</td>
@@ -681,7 +744,7 @@ ${commsMsg}`);
     );
   };
 
-  // ===== Render: Calendario =====
+  // ===== Render: Calendario (interactivo + animado) =====
   const renderCalendario = () => {
     const colorFromCommission = (com) => {
       if (!com) return "#555";
@@ -697,7 +760,11 @@ ${commsMsg}`);
             <h2 className="enroll-title m-0">Calendario</h2>
             <div className="row-center gap-12 label">
               <span>Ciclo lectivo:</span>
-              <select className="grades-input" value={calYear} onChange={(e) => setCalYear(Number(e.target.value))}>
+              <select
+                className="grades-input"
+                value={calYear}
+                onChange={(e) => { setCalYear(Number(e.target.value)); setCalAnimKey(k => k + 1); }}
+              >
                 {years.map((y) => (
                   <option key={y} value={y}>
                     {y}
@@ -705,7 +772,11 @@ ${commsMsg}`);
                 ))}
               </select>
               <span>Mes:</span>
-              <select className="grades-input" value={calMonth} onChange={(e) => setCalMonth(Number(e.target.value))}>
+              <select
+                className="grades-input"
+                value={calMonth}
+                onChange={(e) => { setCalMonth(Number(e.target.value)); setCalAnimKey(k => k + 1); }}
+              >
                 {MESES_ES.map((m, i) => (
                   <option key={m} value={i}>
                     {m}
@@ -716,27 +787,34 @@ ${commsMsg}`);
           </div>
 
           <div className="calendar__dow">
-            {DOW_ES.map((d) => (
+            {["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"].map((d) => (
               <div key={d} className="calendar__dow-item">
                 {d}
               </div>
             ))}
           </div>
 
-          <div className="calendar__grid">
+          <div className="calendar__grid cal-anim" key={calAnimKey}>
             {cells.map((day, idx) => {
               if (day === null) return <div key={`b-${idx}`} className="calendar__cell calendar__cell--empty" />;
+              const dateISO = `${calYear}-${pad2(calMonth + 1)}-${pad2(day)}`;
               const dayEvents = eventosPorDia.get(day) || [];
               return (
-                <div key={`d-${day}`} className="calendar__cell">
+                <div
+                  key={`d-${day}`}
+                  className="calendar__cell calendar__cell--clickable"
+                  onClick={() => openAddModal(dateISO)}
+                  title="Click para agregar evento"
+                >
                   <div className="calendar__day">{day}</div>
                   <div className="calendar__events">
-                    {dayEvents.map((ev) => (
+                    {dayEvents.map((ev, i) => (
                       <div
-                        key={ev.id}
-                        className="calendar__pill"
+                        key={`${ev.id ?? "r"}-${i}`}
+                        className="calendar__pill calendar__pill--clickable"
                         style={{ background: colorFromCommission(ev.comision) }}
                         title={`${ev.titulo} — ${ev.comision}`}
+                        onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                       >
                         <div className="calendar__pill-title">{ev.titulo}</div>
                         <div className="calendar__pill-sub">{ev.comision}</div>
@@ -747,6 +825,69 @@ ${commsMsg}`);
               );
             })}
           </div>
+
+          {/* Modal de evento */}
+          {isModalOpen && (
+            <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h3 className="modal-title">
+                  {modalMode === "add" ? "Agregar evento" : modalMode === "edit" ? "Editar evento" : "Detalle de evento"}
+                </h3>
+
+                <div className="form-row">
+                  <label className="form-label">Fecha</label>
+                  <input
+                    type="date"
+                    className="grades-input"
+                    value={draft.fecha}
+                    onChange={(e) => setDraft({ ...draft, fecha: e.target.value })}
+                    disabled={modalMode === "view"}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">Comisión</label>
+                  <select
+                    className="grades-input"
+                    value={draft.comision}
+                    onChange={(e) => setDraft({ ...draft, comision: e.target.value })}
+                    disabled={modalMode === "view"}
+                  >
+                    {comisionesOptions.map((id) => (
+                      <option key={id} value={id}>{id}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">Título</label>
+                  <input
+                    className="grades-input w-280"
+                    placeholder="Título del evento"
+                    value={draft.titulo}
+                    onChange={(e) => setDraft({ ...draft, titulo: e.target.value })}
+                    disabled={modalMode === "view"}
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button className="btn" onClick={() => setIsModalOpen(false)}>Cerrar</button>
+                  {modalMode === "edit" && (
+                    <button className="btn btn--danger" onClick={deleteDraft}>Eliminar</button>
+                  )}
+                  {modalMode !== "view" && (
+                    <button className="btn btn--success" onClick={saveDraft}>
+                      {modalMode === "add" ? "Agregar" : "Guardar"}
+                    </button>
+                  )}
+                </div>
+
+                {modalMode === "view" && (
+                  <p className="muted mt-16">Evento institucional (no editable).</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="card__footer--right">
             <button className="btn" onClick={() => setActive(null)}>
