@@ -1010,7 +1010,7 @@
     font-size: 17px;
   }
 }
-/* ===================== CONTACTO (FINAL LIMPIO) ===================== */
+/* ===================== CONTACTO ===================== */
 
 /* Contenedor general */
 .contacto-wrap {
@@ -1191,4 +1191,4 @@
 /* Evita desbordes globales */
 html, body { overflow-x: clip; overscroll-behavior-x: none; }
 
-/* =================== FIN CONTACTO (FINAL LIMPIO) =================== */
+
