@@ -1,15 +1,10 @@
-// ────────────────────────────── IMPORTS ──────────────────────────────
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginMock } from "../middlewares/auth";
-import users from "../data/users.json";
-import alumnos from "../data/alumnos.json";
-import docentes from "../data/docentes.json";
-import preceptores from "../data/preceptores.json";
-import administradores from "../data/administrador.json";
+import { apiFetch } from "../lib/api";
+import { getRedirectForRole } from "../middlewares/auth";
 import "../styles/login.css";
 
-// ────────────────────────────── CONSTANTES ───────────────────────────
 const ROLE_AVATAR = {
   alumno: "/alumno.jpg",
   docente: "/docente.jpg",
@@ -18,69 +13,55 @@ const ROLE_AVATAR = {
 };
 const GENERIC_AVATAR = "/icon.png";
 
-// ────────────────────────────── HELPERS ──────────────────────────────
 const canonicalRole = (r = "") => {
-  const v = r.toLowerCase();
+  const v = String(r).toLowerCase();
   if (v === "administracion" || v === "administrativo") return "administrador";
   return v;
 };
 
-const toTitleCase = (s = "") =>
-  s
-    .toLocaleLowerCase("es-AR")
-    .replace(/\b\p{L}/gu, (c) => c.toLocaleUpperCase("es-AR"));
-
-const findPersonByRole = (role, username) => {
-  switch (canonicalRole(role)) {
-    case "alumno":
-      return alumnos.find((a) => a.usuario === username) || null;
-    case "docente":
-      return docentes.find((d) => d.usuario === username) || null;
-    case "preceptor":
-      return preceptores.find((p) => p.usuario === username) || null;
-    case "administrador":
-      return administradores.find((adm) => adm.usuario === username) || null;
-    default:
-      return null;
-  }
-};
-
-// ────────────────────────────── COMPONENTE ───────────────────────────
 export default function Login() {
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState(GENERIC_AVATAR);
 
-  // ───────── Handlers
   const onUserChange = (e) => {
-    const typed = e.target.value.trim().toLowerCase();
-    const found = users.find((x) => x.username.toLowerCase() === typed);
-    const roleKey = canonicalRole(found?.role);
-    setAvatar(ROLE_AVATAR[roleKey] || GENERIC_AVATAR);
+    // Sin lectura de users.json: solo avatar genérico antes de loguear
+    setAvatar(GENERIC_AVATAR);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const user = e.target.user.value.trim();
     const pass = e.target.pass.value.trim();
 
-    const res = loginMock(user, pass);
-    if (!res.ok) return alert(res.error);
+    try {
+      const data = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: { username: user, password: pass },
+      });
 
-    const role = canonicalRole(users.find((u) => u.username === user)?.role || "alumno");
+      const token = data?.token;
+      const role  = canonicalRole(data?.user?.role ?? data?.role);
 
-    const person = findPersonByRole(role, user);
-    const displayName = person
-      ? [person.nombre, person.apellido].filter(Boolean).map(toTitleCase).join(" ")
-      : toTitleCase(user);
+      if (!token || !role) {
+        alert("No se recibió token/rol desde el servidor.");
+        return;
+      }
 
-    localStorage.setItem("username", user);
-    localStorage.setItem("role", role);
-    localStorage.setItem("displayName", displayName);
+      const displayName =
+        [data.user?.nombre, data.user?.apellido].filter(Boolean).join(" ") || (data.user?.username || user);
 
-    navigate(res.redirectTo, { replace: true });
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", data.user?.username || user);
+      localStorage.setItem("role", role);
+      localStorage.setItem("displayName", displayName);
+
+      setAvatar(ROLE_AVATAR[role] || GENERIC_AVATAR);
+      navigate(getRedirectForRole(role), { replace: true });
+    } catch (err) {
+      alert(err.message || "Error de autenticación");
+    }
   };
 
-  // ───────── Render
   return (
     <div className="login-container">
       <div className="login-box textured">
@@ -91,7 +72,6 @@ export default function Login() {
           <h2>Instituto Superior Prisma</h2>
         </div>
 
-        {/* Avatar dinámico por rol */}
         <img src={avatar} alt="Usuario" className="profile-pic" />
 
         <form onSubmit={handleSubmit} className="login-form">
