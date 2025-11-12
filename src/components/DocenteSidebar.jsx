@@ -1,42 +1,38 @@
 import React from "react";
-import "../styles/alumnos.css";
+import "../styles/docente.css";
 import "../styles/AdminSidebar.css";
-
 import { useNavigate } from "react-router-dom";
 
-export default function AdminSidebar({ setVista, vistaActual }) {
+export default function DocenteSidebar({ setActiveItem, activeItem }) {
   const navigate = useNavigate();
 
   const handleSalir = () => {
-    // Mensaje de confirmación
-    const confirmar = window.confirm("¿Desea cerrar sesión y volver al login?");
-    if (confirmar) {
-      // Limpiar datos de usuario si fuera necesario
-      navigate("/"); // redirige a la ruta /login
+    if (window.confirm("¿Desea cerrar sesión y volver al login?")) {
+      navigate("/");
     }
   };
 
   const menuItems = [
-    { key: "alumnos", label: "Gestionar Alumnos" },
-    { key: "oferta", label: "Configurar Oferta Académica" },
-    { key: "constancias", label: "Emitir Constancias" },
+    { key: "notas", label: "Cargar Notas" },
+    { key: "asistencia", label: "Asistencia" },
+    { key: "actas", label: "Acta de Cursada" },
     { key: "notificaciones", label: "Notificaciones" },
   ];
 
   return (
     <div className="admin-sidebar">
       <div className="sidebar-top">
-        <img src="/administrativo.jpg" alt="perfil" className="sidebar-logo" />
+        <img src="/docente.jpg" alt="perfil" className="sidebar-logo" />
       </div>
 
-      <h2>Administración</h2>
+      <h2>Docente</h2>
       <ul>
         {menuItems.map((item) => (
           <li
             key={item.key}
             role="button"
-            className={vistaActual === item.key ? "active" : ""}
-            onClick={() => setVista(item.key)}
+            className={activeItem === item.key ? "active" : ""}
+            onClick={() => setActiveItem(item.key)}
           >
             {item.label}
           </li>

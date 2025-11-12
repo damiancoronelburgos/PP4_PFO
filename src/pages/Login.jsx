@@ -1,14 +1,8 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginMock } from "../middlewares/auth";
-import users from "../data/users.json";
-
-// datasets por rol (para armar displayName después del login)
-import alumnos from "../data/alumnos.json";
-import docentes from "../data/docentes.json";
-import preceptores from "../data/preceptores.json";
-import administradores from "../data/administrador.json"; // si tu archivo se llama distinto, ajustá el import
-
+import { apiFetch } from "../lib/api";
+import { getRedirectForRole } from "../middlewares/auth";
 import "../styles/login.css";
 
 const ROLE_AVATAR = {
@@ -17,65 +11,55 @@ const ROLE_AVATAR = {
   preceptor: "/preceptor.jpg",
   administrador: "/administrativo.jpg",
 };
+const GENERIC_AVATAR = "/icon.png";
+
+const canonicalRole = (r = "") => {
+  const v = String(r).toLowerCase();
+  if (v === "administracion" || v === "administrativo") return "administrador";
+  return v;
+};
 
 export default function Login() {
   const navigate = useNavigate();
-
-  // avatar por defecto (genérico)
-  const [avatar, setAvatar] = useState("/icon.png");
+  const [avatar, setAvatar] = useState(GENERIC_AVATAR);
 
   const onUserChange = (e) => {
-    const u = e.target.value.trim().toLowerCase();
-    const found = users.find((x) => x.username.toLowerCase() === u);
-    if (found) {
-      setAvatar(ROLE_AVATAR[found.role] || "/icon.png");
-    } else {
-      setAvatar("/icon.png");
-    }
+    // Sin lectura de users.json: solo avatar genérico antes de loguear
+    setAvatar(GENERIC_AVATAR);
   };
 
-  // util: según el rol, devolver el registro detallado (para nombre/apellido)
-  const findPersonByRole = (role, username) => {
-    switch (role) {
-      case "alumno":
-        return alumnos.find((a) => a.usuario === username);
-      case "docente":
-        return docentes.find((d) => d.usuario === username);
-      case "preceptor":
-        return preceptores.find((p) => p.usuario === username);
-      case "administracion":
-        return administradores.find((adm) => adm.usuario === username);
-      default:
-        return null;
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const user = e.target.user.value.trim();
     const pass = e.target.pass.value.trim();
 
-    // 1) validar con tu mock
-    const res = loginMock(user, pass);
-    if (!res.ok) return alert(res.error);
+    try {
+      const data = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: { username: user, password: pass },
+      });
 
-    // 2) obtener role desde users.json (es tu “maestro” de credenciales)
-    const found = users.find((u) => u.username === user);
-    const role = found?.role || "alumno";
+      const token = data?.token;
+      const role  = canonicalRole(data?.user?.role ?? data?.role);
 
-    // 3) buscar nombre completo en el dataset del rol
-    const person = findPersonByRole(role, user);
-    const displayName = person
-      ? `${person.nombre ?? ""} ${person.apellido ?? ""}`.trim() || user
-      : user;
+      if (!token || !role) {
+        alert("No se recibió token/rol desde el servidor.");
+        return;
+      }
 
-    // 4) persistir sesión mínima
-    localStorage.setItem("username", user);
-    localStorage.setItem("role", role);
-    localStorage.setItem("displayName", displayName);
+      const displayName =
+        [data.user?.nombre, data.user?.apellido].filter(Boolean).join(" ") || (data.user?.username || user);
 
-    // 5) navegar a donde diga tu mock (ej.: "/alumno", "/docente", etc.)
-    navigate(res.redirectTo, { replace: true });
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", data.user?.username || user);
+      localStorage.setItem("role", role);
+      localStorage.setItem("displayName", displayName);
+
+      setAvatar(ROLE_AVATAR[role] || GENERIC_AVATAR);
+      navigate(getRedirectForRole(role), { replace: true });
+    } catch (err) {
+      alert(err.message || "Error de autenticación");
+    }
   };
 
   return (
@@ -88,7 +72,6 @@ export default function Login() {
           <h2>Instituto Superior Prisma</h2>
         </div>
 
-        {/* AVATAR dinámico por rol (cambia al tipear usuario conocido) */}
         <img src={avatar} alt="Usuario" className="profile-pic" />
 
         <form onSubmit={handleSubmit} className="login-form">

@@ -4,7 +4,7 @@ import GestionAlumnos from "./administrador/GestionAlumnos";
 import OfertaAcademica from "./administrador/OfertaAcademica";
 import Constancias from "./administrador/Constancias";
 import Notificaciones from "./administrador/Notificaciones";
-import "../styles/Alumnos.css";
+import "../styles/alumnos.css";
 import "../styles/Administrador.css";
 
 export default function Administrador() {

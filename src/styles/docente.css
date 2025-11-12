@@ -1,0 +1,331 @@
+/* === ESTRUCTURA GENERAL === */
+.docente-container {
+  display: flex;
+  height: 100vh;
+  background: #111; /* fallback si no carga fondo */
+  overflow: hidden;
+}
+
+.docente-content {
+  flex: 1;
+  background-image: url("/prisma.png");
+  background-size: cover;
+  background-position: center;
+  padding: 30px;
+  color: #fff;
+  overflow-y: auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.docente-vista {
+  background: rgba(0, 0, 0, 0.55);
+  padding: 25px 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* === TITULOS === */
+.titulo-seccion {
+  text-align: center;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* === FILTROS / INPUTS === */
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.filtros input,
+.filtros select {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+}
+
+.filtros button {
+  background: #222;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.filtros button:hover {
+  background: #444;
+}
+
+/* === TABLAS === */
+.tabla-docente {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+  overflow: hidden;
+  color: #fff;
+}
+
+.tabla-docente th,
+.tabla-docente td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px;
+  text-align: center;
+}
+
+.tabla-docente th {
+  background: rgba(0, 0, 0, 0.7);
+  font-weight: bold;
+}
+
+.tabla-docente tr:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* === BOTONES === */
+.btn-guardar {
+  background-color: #16a34a;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 600;
+}
+
+.btn-guardar:hover {
+  background-color: #22c55e;
+}
+
+.btn-limpiar {
+  background-color: #dc2626;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 600;
+}
+
+.btn-limpiar:hover {
+  background-color: #ef4444;
+}
+
+.btn-modificar {
+  background-color: #0ea5e9;
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-modificar:hover {
+  background-color: #38bdf8;
+}
+
+/* === ACCIONES FORM === */
+.acciones-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+/* === SIDEBAR REUTILIZADA === */
+.admin-sidebar {
+  width: 240px;
+  background:  linear-gradient(180deg, rgba(43,43,64,0.7), rgba(30,30,47,0.8)),
+    url('/diseno.jpg') center/cover no-repeat;
+  color: #fff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.admin-sidebar h2 {
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+.sidebar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.sidebar-logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #444;
+}
+
+.admin-sidebar ul {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.admin-sidebar li {
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-align: center;
+}
+
+.admin-sidebar li:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar li.active {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+}
+
+.sidebar-logout {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sidebar-logout:hover {
+  background: #ef4444;
+}
+
+/* === SCROLL === */
+.docente-content::-webkit-scrollbar {
+  width: 8px;
+}
+.docente-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+.docente-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+}
+.docente-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+
+/* === NOTIFICACIONES DOCENTE === */
+.lista-notificaciones {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.notificacion-item {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 15px 20px;
+  border-radius: 10px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.notificacion-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.notificacion-item.visto {
+  opacity: 0.8;
+}
+
+.notificacion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notificacion-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.estrella {
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  color: #ccc;
+}
+
+.estrella:hover {
+  transform: scale(1.2);
+  color: gold;
+}
+
+.estrella.favorito {
+  color: gold;
+}
+
+.notificacion-mensaje {
+  margin: 10px 0;
+  color: #ddd;
+}
+
+.notificacion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-visto {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 0.85rem;
+}
+
+.btn-visto:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-visto-activo {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.btn-novisto {
+  border-color: #ef4444;
+  color: #ef4444;
+}
