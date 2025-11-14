@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/alumnos.css";
 
@@ -15,11 +15,47 @@ import justificacionesData from "../data/justificaciones.json";
 import eventosData from "../data/eventos_calendario.json";
 import contactoInst from "../data/instituto_contacto.json";
 import docentes from "../data/docentes.json";
+import alumnosData from "../data/alumnos.json";
+
+// helper chiquito
+const cap = (s = "") => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Alumnos() {
   const navigate = useNavigate();
   const [active, setActive] = useState(null);
   const alumnoId = 1; // Sabrina (demo)
+
+  // === Alumno desde JSON ===
+  const alumno = useMemo(
+    () => alumnosData.find((a) => a.id === alumnoId),
+    [alumnoId]
+  );
+
+  // Avatar (preview si eligen una foto)
+  const [avatarSrc, setAvatarSrc] = useState(alumno?.foto || "/alumno.jpg");
+  const fileRef = useRef(null);
+  const choosePhoto = () => fileRef.current?.click();
+  const onPhotoChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setAvatarSrc(reader.result);
+    reader.readAsDataURL(f);
+  };
+
+  // Contraseña (demo local)
+  const [showPwd, setShowPwd] = useState(false);
+  const [pwd1, setPwd1] = useState("");
+  const [pwd2, setPwd2] = useState("");
+  const savePassword = (e) => {
+    e.preventDefault();
+    if (!pwd1 || !pwd2) return alert("Completá ambos campos.");
+    if (pwd1 !== pwd2) return alert("Las contraseñas no coinciden.");
+    alert("Contraseña actualizada (demo).");
+    setShowPwd(false);
+    setPwd1("");
+    setPwd2("");
+  };
 
   const items = [
     { id: "inscripcion", label: "Inscripción a materias" },
@@ -96,7 +132,9 @@ export default function Alumnos() {
         );
         const promedio =
           parciales.length > 0
-            ? (parciales.reduce((a, b) => a + b, 0) / parciales.length).toFixed(1)
+            ? (parciales.reduce((a, b) => a + b, 0) / parciales.length).toFixed(
+                1
+              )
             : "--";
         const fecha = c.anio
           ? `${String(c.cuatrimestre).padStart(2, "0")}/${c.anio}`
@@ -349,7 +387,9 @@ export default function Alumnos() {
     const motivoFinal = motivo === "Otro" ? (motivoOtro || "").trim() : motivo;
 
     if (!fecha || !materiaId || !comision || !motivoFinal || !archivo) {
-      alert("Completa todos los campos, incluido el motivo, y adjunta el certificado.");
+      alert(
+        "Completa todos los campos, incluido el motivo, y adjunta el certificado."
+      );
       return;
     }
 
@@ -429,6 +469,105 @@ export default function Alumnos() {
 
   // ====== RENDER ======
   const renderPanel = () => {
+    // ---------- PERFIL ----------
+    if (active === "perfil") {
+      const displayName = alumno
+        ? `${cap(alumno.nombre)} ${cap(alumno.apellido)}`
+        : "—";
+      const email = alumno?.email || "—";
+      const roles = alumno ? [alumno.rol || "alumno"] : ["alumno"];
+
+      return (
+        <div className="profile-wrap">
+          <div className="enroll-card profile-card">
+            <div className="enroll-header">
+              <h2 className="enroll-title">Mi Perfil</h2>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
+            </div>
+
+            <div className="profile-grid">
+              {/* Avatar + cambiar foto */}
+              <div className="profile-col profile-col--avatar">
+                <img src={avatarSrc} alt={displayName} className="profile-avatar-lg" />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPhotoChange}
+                  hidden
+                />
+                <button className="btn btn--success" onClick={choosePhoto}>
+                  Cambiar foto de perfil
+                </button>
+              </div>
+
+              {/* Datos principales + contraseña */}
+              <div className="profile-col profile-col--info">
+                <h3 className="profile-name">{displayName}</h3>
+                <div className="profile-email">{email}</div>
+
+                {!showPwd ? (
+                  <div className="mt-16">
+                    <button
+                      className="btn btn--danger"
+                      onClick={() => setShowPwd(true)}
+                    >
+                      Cambiar contraseña
+                    </button>
+                  </div>
+                ) : (
+                  <form className="pwd-form" onSubmit={savePassword}>
+                    <input
+                      type="password"
+                      className="grades-input"
+                      placeholder="Nueva contraseña"
+                      value={pwd1}
+                      onChange={(e) => setPwd1(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      className="grades-input"
+                      placeholder="Repetir contraseña"
+                      value={pwd2}
+                      onChange={(e) => setPwd2(e.target.value)}
+                    />
+                    <div className="row gap-12">
+                      <button className="btn btn--success" type="submit">
+                        Guardar
+                      </button>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => {
+                          setShowPwd(false);
+                          setPwd1("");
+                          setPwd2("");
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Roles */}
+              <div className="profile-col profile-col--roles">
+                <h4 className="profile-subtitle">Roles</h4>
+                <ul className="profile-roles">
+                  {roles.map((r) => (
+                    <li key={r}>{cap(r)}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ---------- INSCRIPCIÓN ----------
     if (active === "inscripcion") {
       return (
@@ -436,7 +575,9 @@ export default function Alumnos() {
           <div className="enroll-card">
             <div className="enroll-header">
               <h2 className="enroll-title">Inscripción a Materias</h2>
-              <button className="btn" onClick={() => setActive(null)}>Volver</button>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
             </div>
 
             <div className="enroll-cols">
@@ -453,7 +594,10 @@ export default function Alumnos() {
                         <p className="enroll-meta">Horario: {m.horario}</p>
                         <p className="enroll-meta">Cupo: {m.cupo}</p>
                         <div className="enroll-actions">
-                          <button className="btn btn-primary" onClick={() => handleRegister(m.id)}>
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => handleRegister(m.id)}
+                          >
                             Registrarse
                           </button>
                         </div>
@@ -477,7 +621,10 @@ export default function Alumnos() {
                           <p className="enroll-meta">Comisión: {m?.comision}</p>
                           <p className="enroll-meta">Horario: {m?.horario}</p>
                           <div className="enroll-actions">
-                            <button className="btn btn-danger" onClick={() => handleUnregister(id)}>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleUnregister(id)}
+                            >
                               Eliminar
                             </button>
                           </div>
@@ -485,7 +632,9 @@ export default function Alumnos() {
                       );
                     })
                   )}
-                  {showEnrollOk && <p className="enroll-success">¡Inscripción exitosa!</p>}
+                  {showEnrollOk && (
+                    <p className="enroll-success">¡Inscripción exitosa!</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -501,11 +650,15 @@ export default function Alumnos() {
           <div className="enroll-card grades-card">
             <div className="enroll-header">
               <h2 className="enroll-title">Calificaciones</h2>
-              <button className="btn" onClick={() => setActive(null)}>Volver</button>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
             </div>
 
             <div className="grades-filter">
-              <label className="grades-filter__label">Filtrar por materia:&nbsp;</label>
+              <label className="grades-filter__label">
+                Filtrar por materia:&nbsp;
+              </label>
               <input
                 className="grades-input"
                 type="text"
@@ -519,8 +672,13 @@ export default function Alumnos() {
               <table className="grades-table">
                 <thead>
                   <tr>
-                    <th>Materia</th><th>Comisión</th><th>Parcial I</th><th>Parcial II</th>
-                    <th>Parcial III</th><th>Estado</th><th>Observaciones</th>
+                    <th>Materia</th>
+                    <th>Comisión</th>
+                    <th>Parcial I</th>
+                    <th>Parcial II</th>
+                    <th>Parcial III</th>
+                    <th>Estado</th>
+                    <th>Observaciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -553,14 +711,20 @@ export default function Alumnos() {
           <div className="historial-card">
             <div className="historial-header">
               <h2 className="historial-title">Historial Académico</h2>
-              <button className="btn" onClick={() => setActive(null)}>Volver</button>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
             </div>
 
             <div className="historial-table-wrap">
               <table className="historial-table">
                 <thead>
                   <tr>
-                    <th>Materia</th><th>Comisión</th><th>Nota Final</th><th>Fecha</th><th>Estado</th>
+                    <th>Materia</th>
+                    <th>Comisión</th>
+                    <th>Nota Final</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -598,16 +762,37 @@ export default function Alumnos() {
               </h2>
               <div className="notes-toolbar">
                 <div className="pill-group">
-                  <button className={"pill" + (notesMode === "all" ? " is-active" : "")} onClick={() => setNotesMode("all")}>Todos</button>
-                  <button className={"pill" + (notesMode === "fav" ? " is-active" : "")} onClick={() => setNotesMode("fav")}>⭐ Favoritos</button>
-                  <button className={"pill" + (notesMode === "unread" ? " is-active" : "")} onClick={() => setNotesMode("unread")}>No leídas</button>
+                  <button
+                    className={"pill" + (notesMode === "all" ? " is-active" : "")}
+                    onClick={() => setNotesMode("all")}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    className={"pill" + (notesMode === "fav" ? " is-active" : "")}
+                    onClick={() => setNotesMode("fav")}
+                  >
+                    ⭐ Favoritos
+                  </button>
+                  <button
+                    className={
+                      "pill" + (notesMode === "unread" ? " is-active" : "")
+                    }
+                    onClick={() => setNotesMode("unread")}
+                  >
+                    No leídas
+                  </button>
                 </div>
 
                 {unreadCount > 0 && (
-                  <span className="badge"><span className="badge-dot" /> {unreadCount} sin leer</span>
+                  <span className="badge">
+                    <span className="badge-dot" /> {unreadCount} sin leer
+                  </span>
                 )}
 
-                <button className="btn" onClick={() => setActive(null)}>Volver</button>
+                <button className="btn" onClick={() => setActive(null)}>
+                  Volver
+                </button>
               </div>
             </div>
 
@@ -636,14 +821,18 @@ export default function Alumnos() {
                     <div
                       key={n.id}
                       className={
-                        "note-item type-" + (n.tipo || "general") + (isRead ? "" : " unread")
+                        "note-item type-" +
+                        (n.tipo || "general") +
+                        (isRead ? "" : " unread")
                       }
                     >
                       <div className="note-head">
                         <button
                           className={"note-fav-btn" + (isFav ? " is-on" : "")}
                           onClick={() => toggleFav(n.id)}
-                          title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                          title={
+                            isFav ? "Quitar de favoritos" : "Agregar a favoritos"
+                          }
                         >
                           <img
                             src={isFav ? "/favorito.png" : "/nofavorito.png"}
@@ -656,7 +845,11 @@ export default function Alumnos() {
                         <div className="note-date">{fecha}</div>
 
                         <div className="note-actions">
-                          <button className="note-icon-btn" onClick={() => toggleRead(n.id)} title={isRead ? "Leída" : "No leída"}>
+                          <button
+                            className="note-icon-btn"
+                            onClick={() => toggleRead(n.id)}
+                            title={isRead ? "Leída" : "No leída"}
+                          >
                             <img
                               src={isRead ? "/leido.png" : "/noleido.png"}
                               alt={isRead ? "Leída" : "No leída"}
@@ -677,13 +870,18 @@ export default function Alumnos() {
                             />
                           </button>
 
-                          <button className="note-btn danger" onClick={() => removeNote(n.id)}>
+                          <button
+                            className="note-btn danger"
+                            onClick={() => removeNote(n.id)}
+                          >
                             Eliminar
                           </button>
                         </div>
                       </div>
 
-                      {isExpanded && <div className="note-detail">{n.detalle}</div>}
+                      {isExpanded && (
+                        <div className="note-detail">{n.detalle}</div>
+                      )}
                     </div>
                   );
                 })
@@ -701,7 +899,9 @@ export default function Alumnos() {
           <div className="asis-card">
             <div className="asis-header">
               <h2 className="asis-title">Asistencias y Justificaciones</h2>
-              <button className="btn" onClick={() => setActive(null)}>Volver</button>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
             </div>
 
             {/* Resumen */}
@@ -711,10 +911,18 @@ export default function Alumnos() {
               <div className="pill t">T: {resumen.T}</div>
               <div className="pill j">J: {resumen.J}</div>
               <div className="legend">
-                <span><b>P</b> = Presente</span>
-                <span><b>A</b> = Ausente</span>
-                <span><b>T</b> = Tarde</span>
-                <span><b>J</b> = Justificado</span>
+                <span>
+                  <b>P</b> = Presente
+                </span>
+                <span>
+                  <b>A</b> = Ausente
+                </span>
+                <span>
+                  <b>T</b> = Tarde
+                </span>
+                <span>
+                  <b>J</b> = Justificado
+                </span>
               </div>
             </div>
 
@@ -723,7 +931,11 @@ export default function Alumnos() {
               <table className="asis-table">
                 <thead>
                   <tr>
-                    <th>Fecha</th><th>Materia</th><th>Comisión</th><th>Estado</th><th>Acción</th>
+                    <th>Fecha</th>
+                    <th>Materia</th>
+                    <th>Comisión</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -734,14 +946,19 @@ export default function Alumnos() {
                       const m = materiaById[a.materiaId];
                       const estadoTxt = ESTADOS[a.estado] || a.estado;
                       const puedeJustificar =
-                        (a.estado === "A" || a.estado === "T") && !yaJustificada(a);
+                        (a.estado === "A" || a.estado === "T") &&
+                        !yaJustificada(a);
                       return (
                         <tr key={idx}>
-                          <td>{new Date(a.fecha).toLocaleDateString("es-AR")}</td>
+                          <td>
+                            {new Date(a.fecha).toLocaleDateString("es-AR")}
+                          </td>
                           <td>{m?.nombre || a.materiaId}</td>
                           <td>{a.comision}</td>
                           <td>
-                            <span className={`badge-state est-${a.estado.toLowerCase()}`}>
+                            <span
+                              className={`badge-state est-${a.estado.toLowerCase()}`}
+                            >
                               {estadoTxt}
                             </span>
                           </td>
@@ -750,14 +967,18 @@ export default function Alumnos() {
                               <button
                                 className="btn btn-justificar"
                                 onClick={() =>
-                                  onPickTarget(`${a.fecha}|${a.materiaId}|${a.comision}`)
+                                  onPickTarget(
+                                    `${a.fecha}|${a.materiaId}|${a.comision}`
+                                  )
                                 }
                               >
                                 Justificar
                               </button>
                             ) : (
                               <span className="muted">
-                                {a.estado === "A" || a.estado === "T" ? "Ya justificada" : "—"}
+                                {a.estado === "A" || a.estado === "T"
+                                  ? "Ya justificada"
+                                  : "—"}
                               </span>
                             )}
                           </td>
@@ -780,7 +1001,11 @@ export default function Alumnos() {
                     className="jus-input"
                     value={jusForm.motivo}
                     onChange={(e) =>
-                      setJusForm((f) => ({ ...f, motivo: e.target.value, motivoOtro: "" }))
+                      setJusForm((f) => ({
+                        ...f,
+                        motivo: e.target.value,
+                        motivoOtro: "",
+                      }))
                     }
                   >
                     <option value="">Seleccione un motivo…</option>
@@ -836,8 +1061,12 @@ export default function Alumnos() {
                 <table className="asis-table">
                   <thead>
                     <tr>
-                      <th>Fecha</th><th>Materia</th><th>Comisión</th>
-                      <th>Motivo</th><th>Estado</th><th>Documento</th>
+                      <th>Fecha</th>
+                      <th>Materia</th>
+                      <th>Comisión</th>
+                      <th>Motivo</th>
+                      <th>Estado</th>
+                      <th>Documento</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -848,16 +1077,26 @@ export default function Alumnos() {
                         const m = materiaById[j.materiaId];
                         return (
                           <tr key={j.id}>
-                            <td>{new Date(j.fecha).toLocaleDateString("es-AR")}</td>
+                            <td>
+                              {new Date(j.fecha).toLocaleDateString("es-AR")}
+                            </td>
                             <td>{m?.nombre || j.materiaId}</td>
                             <td>{j.comision}</td>
                             <td>{j.motivo}</td>
                             <td>
-                              <span className={`badge-state st-${j.estado}`}>{j.estado}</span>
+                              <span className={`badge-state st-${j.estado}`}>
+                                {j.estado}
+                              </span>
                             </td>
                             <td>
                               {j.documentoUrl ? (
-                                <a href={j.documentoUrl} target="_blank" rel="noreferrer">Ver</a>
+                                <a
+                                  href={j.documentoUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  Ver
+                                </a>
                               ) : (
                                 "—"
                               )}
@@ -876,12 +1115,16 @@ export default function Alumnos() {
 
     // --- CALENDARIO  ---
     if (active === "calendario") {
-      const cells = Array.from({length:42}, (_,i)=> {
-        const d=new Date(start); d.setDate(start.getDate()+i);
-        const iso=d.toISOString().slice(0,10);
-        return { d, iso, inMonth: d.getMonth()===m, evs: (eventosPorDia[iso]||[]) };
+      const cells = Array.from({ length: 42 }, (_, i) => {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const iso = d.toISOString().slice(0, 10);
+        return { d, iso, inMonth: d.getMonth() === m, evs: eventosPorDia[iso] || [] };
       });
-      const mes = calBase.toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+      const mes = calBase.toLocaleDateString("es-AR", {
+        month: "long",
+        year: "numeric",
+      });
 
       return (
         <div className="calendar-wrap">
@@ -889,33 +1132,49 @@ export default function Alumnos() {
             <div className="cal-header">
               <h2 className="cal-title">Calendario académico</h2>
               <div className="cal-nav">
-                <button className="btn" onClick={() => setActive(null)}>Volver</button>
+                <button className="btn" onClick={() => setActive(null)}>
+                  Volver
+                </button>
               </div>
             </div>
 
             <div className="cal-bar">
-              <button className="btn" onClick={() => shiftMonth(-1)}>◀</button>
+              <button className="btn" onClick={() => shiftMonth(-1)}>
+                ◀
+              </button>
               <div className="cal-month">{mes}</div>
-              <button className="btn" onClick={() => shiftMonth(1)}>▶</button>
+              <button className="btn" onClick={() => shiftMonth(1)}>
+                ▶
+              </button>
             </div>
 
             <div className="cal-weekdays">
-              {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(n=>(
-                <div key={n} className="cal-weekday">{n}</div>
+              {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((n) => (
+                <div key={n} className="cal-weekday">
+                  {n}
+                </div>
               ))}
             </div>
 
             <div className="cal-grid">
-              {cells.map(({d,iso,inMonth,evs},i)=>(
-                <button key={i}
-                  className={"cal-cell"+(inMonth?"":" is-out")+(evs.length?" has-events":"")}
-                  onClick={()=>setDiaSel({iso,evs})}
-                  title={evs.length?`${evs.length} evento(s)`:""}>
+              {cells.map(({ d, iso, inMonth, evs }, i) => (
+                <button
+                  key={i}
+                  className={
+                    "cal-cell" + (inMonth ? "" : " is-out") + (evs.length ? " has-events" : "")
+                  }
+                  onClick={() => setDiaSel({ iso, evs })}
+                  title={evs.length ? `${evs.length} evento(s)` : ""}
+                >
                   <div className="cal-day">{d.getDate()}</div>
                   {!!evs.length && (
                     <div className="cal-dots">
-                      {evs.slice(0,3).map((_,k)=><span key={k} className="dot" />)}
-                      {evs.length>3 && <span className="more">+{evs.length-3}</span>}
+                      {evs.slice(0, 3).map((_, k) => (
+                        <span key={k} className="dot" />
+                      ))}
+                      {evs.length > 3 && (
+                        <span className="more">+{evs.length - 3}</span>
+                      )}
                     </div>
                   )}
                 </button>
@@ -925,24 +1184,37 @@ export default function Alumnos() {
             <div className="cal-details">
               {!diaSel ? (
                 <p className="muted">Seleccioná un día para ver eventos.</p>
-              ) : diaSel.evs.length===0 ? (
+              ) : diaSel.evs.length === 0 ? (
                 <div className="cal-details__head">
-                  <h3>{new Date(diaSel.iso+"T00:00:00").toLocaleDateString("es-AR")}</h3>
-                  <button className="btn" onClick={()=>setDiaSel(null)}>Cerrar</button>
+                  <h3>
+                    {new Date(diaSel.iso + "T00:00:00").toLocaleDateString("es-AR")}
+                  </h3>
+                  <button className="btn" onClick={() => setDiaSel(null)}>
+                    Cerrar
+                  </button>
                 </div>
               ) : (
                 <>
                   <div className="cal-details__head">
-                    <h3>Eventos del {new Date(diaSel.iso+"T00:00:00").toLocaleDateString("es-AR")}</h3>
-                    <button className="btn" onClick={()=>setDiaSel(null)}>Cerrar</button>
+                    <h3>
+                      Eventos del{" "}
+                      {new Date(diaSel.iso + "T00:00:00").toLocaleDateString("es-AR")}
+                    </h3>
+                    <button className="btn" onClick={() => setDiaSel(null)}>
+                      Cerrar
+                    </button>
                   </div>
                   <ul className="cal-list">
-                    {diaSel.evs.sort((a,b)=>a.titulo.localeCompare(b.titulo)).map(ev=>(
-                      <li key={ev.id} className="cal-item">
-                        <div className="cal-item__title">{ev.titulo}</div>
-                        <div className="cal-item__meta">Comisión: <b>{ev.comision}</b></div>
-                      </li>
-                    ))}
+                    {diaSel.evs
+                      .sort((a, b) => a.titulo.localeCompare(b.titulo))
+                      .map((ev) => (
+                        <li key={ev.id} className="cal-item">
+                          <div className="cal-item__title">{ev.titulo}</div>
+                          <div className="cal-item__meta">
+                            Comisión: <b>{ev.comision}</b>
+                          </div>
+                        </li>
+                      ))}
                   </ul>
                 </>
               )}
@@ -959,25 +1231,56 @@ export default function Alumnos() {
           <div className="contacto-card">
             <div className="contacto-header">
               <h2 className="contacto-title">Contacto</h2>
-              <button className="btn" onClick={() => setActive(null)}>Volver</button>
+              <button className="btn" onClick={() => setActive(null)}>
+                Volver
+              </button>
             </div>
 
             {/* Info institucional */}
             <section className="contacto-box">
-              <h3 className="contacto-sub">{contactoInst.nombre || "Instituto Superior Prisma"}</h3>
+              <h3 className="contacto-sub">
+                {contactoInst.nombre || "Instituto Superior Prisma"}
+              </h3>
               <ul className="contacto-list">
-                {contactoInst.direccion && <li>📍 Dirección: {contactoInst.direccion}</li>}
-                {contactoInst.telefono && <li>📞 Teléfono: {contactoInst.telefono}</li>}
+                {contactoInst.direccion && (
+                  <li>📍 Dirección: {contactoInst.direccion}</li>
+                )}
+                {contactoInst.telefono && (
+                  <li>📞 Teléfono: {contactoInst.telefono}</li>
+                )}
                 {contactoInst.email_secretaria && (
-                  <li>✉️ Secretaría: <a className="mail-link" href={`mailto:${contactoInst.email_secretaria}`}>{contactoInst.email_secretaria}</a></li>
+                  <li>
+                    ✉️ Secretaría:{" "}
+                    <a
+                      className="mail-link"
+                      href={`mailto:${contactoInst.email_secretaria}`}
+                    >
+                      {contactoInst.email_secretaria}
+                    </a>
+                  </li>
                 )}
                 {contactoInst.email_soporte && (
-                  <li>🛠️ Soporte: <a className="mail-link" href={`mailto:${contactoInst.email_soporte}`}>{contactoInst.email_soporte}</a></li>
+                  <li>
+                    🛠️ Soporte:{" "}
+                    <a
+                      className="mail-link"
+                      href={`mailto:${contactoInst.email_soporte}`}
+                    >
+                      {contactoInst.email_soporte}
+                    </a>
+                  </li>
                 )}
                 {contactoInst.web && (
-                  <li>🌐 Sitio web: <a href={contactoInst.web} target="_blank" rel="noreferrer">{contactoInst.web}</a></li>
+                  <li>
+                    🌐 Sitio web:{" "}
+                    <a href={contactoInst.web} target="_blank" rel="noreferrer">
+                      {contactoInst.web}
+                    </a>
+                  </li>
                 )}
-                {contactoInst.horarios && <li>🕐 Horarios: {contactoInst.horarios}</li>}
+                {contactoInst.horarios && (
+                  <li>🕐 Horarios: {contactoInst.horarios}</li>
+                )}
               </ul>
             </section>
 
@@ -992,44 +1295,46 @@ export default function Alumnos() {
             </div>
 
             {/* Tabla docentes */}
-            {/* Tabla docentes */}
-<section className="contacto-box">
-  <h3 className="contacto-sub">Docentes</h3>
-  <div className="tabla-scroll">
-    <table className="tabla-contacto">
-      <thead>
-        <tr>
-          <th>Docente</th>
-          <th>Email</th>
-          <th>Teléfono</th>
-        </tr>
-      </thead>
-      <tbody>
-        {docentesFiltrados.length === 0 ? (
-          <tr>
-            {/* ahora la tabla tiene 3 columnas */}
-            <td colSpan="3" style={{ textAlign: "center" }}>
-              No se encontraron resultados.
-            </td>
-          </tr>
-        ) : (
-          docentesFiltrados.map((doc) => (
-            <tr key={doc.id}>
-              <td>{doc.nombre} {doc.apellido}</td>
-              <td>
-                <a className="mail-link" href={`mailto:${doc.email}`}>
-                  {doc.email}
-                </a>
-              </td>
-              <td>{doc.telefono || "—"}</td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </div>
-</section>
-
+            <section className="contacto-box">
+              <h3 className="contacto-sub">Docentes</h3>
+              <div className="tabla-scroll">
+                <table className="tabla-contacto">
+                  <thead>
+                    <tr>
+                      <th>Docente</th>
+                      <th>Email</th>
+                      <th>Teléfono</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {docentesFiltrados.length === 0 ? (
+                      <tr>
+                        <td colSpan="3" style={{ textAlign: "center" }}>
+                          No se encontraron resultados.
+                        </td>
+                      </tr>
+                    ) : (
+                      docentesFiltrados.map((doc) => (
+                        <tr key={doc.id}>
+                          <td>
+                            {doc.nombre} {doc.apellido}
+                          </td>
+                          <td>
+                            <a
+                              className="mail-link"
+                              href={`mailto:${doc.email}`}
+                            >
+                              {doc.email}
+                            </a>
+                          </td>
+                          <td>{doc.telefono || "—"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </div>
       );
@@ -1052,7 +1357,7 @@ export default function Alumnos() {
           <div className="sb-profile">
             <button
               className="sb-gear"
-              onClick={() => alert("Próximamente edición de perfil")}
+              onClick={() => setActive("perfil")}
               title="Editar perfil"
             >
               <img src="/perfil.gif" alt="Configuración de perfil" />
