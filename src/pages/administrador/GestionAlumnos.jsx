@@ -1,25 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Eliminamos useCallback
 import "../../styles/Administrador.css";
-
-// 1. IMPORTACIÓN REAL DE DATOS
-import ALUMNOS_DATA from "../../data/alumnos.json"; 
-import MATERIAS_DATA from "../../data/materias.json"; 
-
-// Nombre clave para guardar/cargar en el localStorage
-const LOCAL_STORAGE_KEY = 'prisma_alumnos';
-
-// Extraer solo los nombres de los cursos disponibles
-const CURSOS_DISPONIBLES = MATERIAS_DATA.map(materia => materia.nombre);
 
 // ESTADO INICIAL DEL FORMULARIO
 const initialFormState = {
     dni: '',
     nombre: '',
     apellido: '',
-    curso: CURSOS_DISPONIBLES[0] 
+    materia_id: 0, 
+    telefono: '',
+    email: ''
 };
 
 const GestionAlumnos = () => {
+    
     // Estados principales
     const [modo, setModo] = useState('lista'); 
     const [alumnos, setAlumnos] = useState([]); 
@@ -27,33 +20,85 @@ const GestionAlumnos = () => {
     const [accionActual, setAccionActual] = useState('agregar'); 
     const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null); 
     const [isLoading, setIsLoading] = useState(true); 
+    const [materiasDisponibles, setMateriasDisponibles] = useState([]); 
 
-    // 2. FUNCIÓN DE CARGA INICIAL (Carga desde localStorage o JSON base) 🛠️
+    // Función para obtener el token
+    const getToken = () => localStorage.getItem("token");
+
+    // ===============================================
+    // 1. CARGA DE MATERIAS 📚
+    // ===============================================
     useEffect(() => {
-        let initialData = ALUMNOS_DATA; 
-        const storedAlumnos = localStorage.getItem(LOCAL_STORAGE_KEY);
+        const fetchMaterias = async () => {
+            const token = getToken();
+            if (!token) return;
 
-        if (storedAlumnos) {
-            const storedArray = JSON.parse(storedAlumnos);
-            
-            if (storedArray && storedArray.length > 0) {
-                initialData = storedArray;
+            try {
+                const res = await fetch("/api/gestion/materias", { 
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setMateriasDisponibles(data);
+                    // Inicializa el formulario con el primer ID si hay materias
+                    if (data.length > 0) {
+                        setFormData(prev => ({ ...prev, materia_id: data[0].id }));
+                    }
+                } else {
+                    console.error("Error al cargar materias:", await res.json());
+                }
+            } catch (err) {
+                console.error("Error de red al cargar materias:", err);
             }
-        }
-        
-        setAlumnos(initialData);
-        setIsLoading(false); 
-    }, []);
+        };
+        fetchMaterias();
+    }, []); // Se ejecuta solo una vez al montar
 
-    // 3. EFECTO para GUARDAR los datos (Persistencia simulada) 💾
+    // ===============================================
+    // 2. FUNCIÓN DE CARGA DE ALUMNOS (READ) 📖
+    // Se extrae la lógica a una función simple que puede llamarse en CRUD
+    // ===============================================
+    const fetchAlumnos = async () => {
+        const token = getToken();
+        if (!token) {
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/gestion/alumnos", { 
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error("Error al cargar alumnos:", errorData.error || res.statusText);
+                return;
+            }
+            
+            const data = await res.json();
+            setAlumnos(data);
+            
+        } catch (err) {
+            console.error("Error de red al cargar alumnos:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    // 3. EFECTO para CARGA INICIAL de alumnos
     useEffect(() => {
-        if (!isLoading) {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(alumnos));
-        }
-    }, [alumnos, isLoading]);
+        fetchAlumnos();
+    }, []); // Se ejecuta solo una vez al montar
 
-
-    // 4. Manejadores y Lógica de CRUD
+    // ===============================================
+    // 4. MANEJADORES Y LÓGICA CRUD
+    // ===============================================
+    
+    // El resto de los manejadores se mantiene igual, ya que no son handlers de dependencia
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         if (name === 'dni' && value && !/^\d*$/.test(value)) {
@@ -67,63 +112,110 @@ const GestionAlumnos = () => {
         setModo('formulario');
 
         if (accion === 'modificar' && alumno) {
+            // Buscamos el ID de la materia a partir del nombre_materia (del JOIN)
+            const materia = materiasDisponibles.find(m => m.nombre === alumno.nombre_materia);
+            
             setFormData({
                 dni: alumno.dni || '',
                 nombre: alumno.nombre || '',
                 apellido: alumno.apellido || '',
-                curso: alumno.curso || CURSOS_DISPONIBLES[0],
+                telefono: alumno.telefono || '',
+                email: alumno.email || '',
+                materia_id: materia ? materia.id : materiasDisponibles[0]?.id || 0,
             });
             setAlumnoSeleccionado(alumno.id);
         } else {
             setFormData(initialFormState);
+            if (materiasDisponibles.length > 0) {
+                 setFormData(prev => ({ ...prev, materia_id: materiasDisponibles[0].id }));
+            }
             setAlumnoSeleccionado(null);
         }
     };
-
-    const handleSubmitForm = () => {
-        if (!formData.dni || !formData.nombre || !formData.apellido) {
-            alert("DNI, Nombre y Apellido son obligatorios.");
+    
+    // SUBMIT ASÍNCRONO
+    const handleSubmitForm = async () => {
+        if (!formData.dni || !formData.nombre || !formData.apellido || !formData.materia_id) {
+            alert("DNI, Nombre, Apellido y Curso son obligatorios.");
             return;
         }
 
-        if (accionActual === 'agregar') {
-            const nuevoAlumno = { 
-                id: Date.now(), 
-                dni: formData.dni,
-                nombre: formData.nombre,
-                apellido: formData.apellido,
-                curso: formData.curso,
-                
-                // Datos faltantes completados con valores predeterminados
-                edad: 'N/A',
-                "fecha de nacimiento": 'N/A',
-                telefono: 'N/A',
-                email: `${formData.nombre.toLowerCase()}.${formData.apellido.toLowerCase()}@prisma.com`,
-                usuario: `alumno_${formData.dni}`, 
-                contraseña: '1111',
-                rol: 'alumno',
-            }; 
-            setAlumnos(prev => [...prev, nuevoAlumno]); 
-        } else if (accionActual === 'modificar') {
-            const alumnoOriginal = alumnos.find(a => a.id === alumnoSeleccionado);
-            
-            setAlumnos(prev =>
-                prev.map(a =>
-                    a.id === alumnoSeleccionado
-                        ? { ...alumnoOriginal, ...formData } 
-                        : a
-                )
-            );
+        const token = getToken();
+        if (!token) return alert("Sesión no válida.");
+
+        const dataToSend = {
+            dni: formData.dni,
+            nombre: formData.nombre,
+            apellido: formData.apellido,
+            telefono: formData.telefono, 
+            email: formData.email,
+            materia_id: parseInt(formData.materia_id), 
+        };
+
+        let method = 'POST';
+        let url = "/api/gestion/alumnos";
+
+        if (accionActual === 'modificar') {
+            method = 'PUT';
+            url = `/api/gestion/alumnos/${alumnoSeleccionado}`;
         }
 
-        setModo('lista');
-        setFormData(initialFormState);
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            if (!res.ok) {
+                 const error = await res.json();
+                 alert(`Error al guardar: ${error.error || 'Error de servidor'}`);
+                 return;
+            }
+
+            await fetchAlumnos(); // Recargar la lista
+            setModo('lista');
+            setFormData(initialFormState);
+            setAlumnoSeleccionado(null);
+
+        } catch (err) {
+            console.error("Error de red en el CRUD:", err);
+            alert("Error de conexión al servidor.");
+        }
     };
 
-    const handleEliminar = (id) => {
-        if (window.confirm("¿Estás seguro de que quieres eliminar este alumno?")) {
-            setAlumnos(prev => prev.filter(a => a.id !== id));
+    // ELIMINAR ASÍNCRONO
+    const handleEliminar = async (id) => {
+        if (!window.confirm("¿Estás seguro de que quieres eliminar este alumno?")) {
+            return;
+        }
+
+        const token = getToken();
+        if (!token) return alert("Sesión no válida.");
+
+        try {
+            const res = await fetch(`/api/gestion/alumnos/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!res.ok) {
+                 const error = await res.json();
+                 alert(`Error al eliminar: ${error.error || 'Error de servidor'}`);
+                 return;
+            }
+
+            await fetchAlumnos(); // Recargar la lista
             setAlumnoSeleccionado(null);
+            
+        } catch (err) {
+            console.error("Error de red al eliminar:", err);
+            alert("Error de conexión al servidor.");
         }
     };
 
@@ -132,26 +224,31 @@ const GestionAlumnos = () => {
     };
 
 
+    // ===============================================
     // 5. Renderizado del Formulario
+    // ===============================================
     const renderFormulario = () => (
         <div className="formulario-gestion">
             
             <div className="campos-labels">
-                 <span className="label-col">DNI</span>
-                 <span className="label-col">Nombre</span>
-                 <span className="label-col">Apellido</span>
-                 <span className="label-col">Curso</span>
+                   <span className="label-col">DNI</span>
+                   <span className="label-col">Nombre</span>
+                   <span className="label-col">Apellido</span>
+                   <span className="label-col">Teléfono</span>
+                   <span className="label-col">Email</span>
+                   <span className="label-col">Curso</span>
             </div>
 
-            <div className="campos-grid">
-                {/* DNI se puede bloquear si está en modo modificar, pero lo dejo editable por simplicidad */}
+            <div className="campos-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
                 <input type="text" name="dni" placeholder="DNI" className="campo-texto" value={formData.dni} onChange={handleInputChange} />
                 <input type="text" name="nombre" placeholder="Nombre" className="campo-texto" value={formData.nombre} onChange={handleInputChange} />
                 <input type="text" name="apellido" placeholder="Apellido" className="campo-texto" value={formData.apellido} onChange={handleInputChange} />
+                <input type="text" name="telefono" placeholder="Teléfono" className="campo-texto" value={formData.telefono} onChange={handleInputChange} />
+                <input type="email" name="email" placeholder="Email" className="campo-texto" value={formData.email} onChange={handleInputChange} />
                 
-                <select name="curso" className="campo-texto" value={formData.curso} onChange={handleInputChange}>
-                    {CURSOS_DISPONIBLES.map(curso => (
-                        <option key={curso} value={curso}>{curso}</option>
+                <select name="materia_id" className="campo-texto" value={formData.materia_id} onChange={handleInputChange}>
+                    {materiasDisponibles.map(materia => (
+                        <option key={materia.id} value={materia.id}>{materia.nombre}</option>
                     ))}
                 </select>
             </div>
@@ -172,7 +269,7 @@ const GestionAlumnos = () => {
     const renderLista = () => (
         <div className="formulario-gestion">
             
-            <div className="campos-labels">
+            <div className="campos-labels" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 <span className="label-col">DNI</span>
                 <span className="label-col">Nombre</span>
                 <span className="label-col">Apellido</span>
@@ -190,20 +287,19 @@ const GestionAlumnos = () => {
                             padding: '10px', 
                             background: alumno.id === alumnoSeleccionado ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)', 
                             color: 'white',
-                            cursor: 'pointer' 
+                            cursor: 'pointer',
+                            gridTemplateColumns: 'repeat(4, 1fr)' 
                         }}
                     >
                         <span>{alumno.dni}</span>
                         <span>{alumno.nombre}</span>
                         <span>{alumno.apellido}</span>
-                        <span>{alumno.curso}</span>
+                        <span>{alumno.nombre_materia || 'Sin Asignar'}</span> 
                     </div>
                 ))
             ) : (
                 <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>No hay alumnos registrados.</p>
             )}
-            
-            {/* 🚨 ELIMINADO: El botón "Modificar Seleccionado" ha sido removido de aquí. */}
         </div>
     );
 
@@ -222,7 +318,7 @@ const GestionAlumnos = () => {
             <div className="panel-acciones" style={{ position: 'relative' }}>
                 
                 {isLoading ? (
-                    <p style={{ color: 'white', textAlign: 'center', padding: '50px' }}>Cargando datos...</p>
+                    <p style={{ color: 'white', textAlign: 'center', padding: '50px' }}>Cargando datos de la base de datos...</p>
                 ) : (
                     <>
                         {modo === 'lista' && (
@@ -230,11 +326,12 @@ const GestionAlumnos = () => {
                                 
                                 <button 
                                     className="boton-accion agregar" 
-                                    onClick={() => handleAbrirFormulario('agregar')}>
+                                    onClick={() => handleAbrirFormulario('agregar')}
+                                    disabled={materiasDisponibles.length === 0} 
+                                >
                                     Agregar alumno
                                 </button>
                                 
-                                {/* 🚨 FUNCIONALIDAD AGREGADA: El botón Modificar llama directamente a la lógica de modificar seleccionado */}
                                 <button 
                                     className="boton-accion modificar" 
                                     onClick={() => {
@@ -249,7 +346,6 @@ const GestionAlumnos = () => {
                                     Modificar
                                 </button>
                                 
-                                {/* Botón Eliminar, posicionado absolutamente a la derecha con el estilo inline (que simula el CSS del último ajuste) */}
                                 <button 
                                     className="boton-accion eliminar"
                                     onClick={() => alumnoSeleccionado && handleEliminar(alumnoSeleccionado)}

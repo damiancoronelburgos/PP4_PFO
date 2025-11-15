@@ -1,38 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import "../../styles/Administrador.css";
 
-// 🚨 Librerías para PDF (Alternativa a html2pdf)
+// Librerías para PDF
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // Asegúrate de que esta línea esté, aunque no se use directamente
-
-// Datos mock
-import ALUMNOS_DATA from "../../data/alumnos.json"; 
-// Necesitarás una fuente de historial/calificaciones similar a la de tu compañera
-// Como no la tenemos aquí, usaremos un historial simulado dentro de la función
+import autoTable from "jspdf-autotable"; 
 
 const TIPOS_CONSTANCIA = [
     "Seleccione un tipo...",
     "Título en trámite",
     "Materia aprobada",
     "Alumno regular",
-    "Historial académico", // 👈 Nos enfocaremos en esta
+    "Historial académico", 
 ];
 
 const Constancias = () => {
-    // La referencia (constanciaRef) y el estado de visibilidad (esVisibleParaPDF)
-    // ya NO son necesarios con jsPDF, ya que construimos el PDF en memoria.
     
     const [alumnos, setAlumnos] = useState([]);
     const [formData, setFormData] = useState({
         dni: '',
         tipoConstancia: TIPOS_CONSTANCIA[0],
     });
-    const [alumnoEncontrado, setAlumnoEncontrado] = useState(null);
+    const [alumnoEncontrado, setAlumnoEncontrado] = useState(null); 
     const [mensajeError, setMensajeError] = useState('');
 
+    // 🚨 EFECTO PARA CARGAR ALUMNOS CON AUTENTICACIÓN
     useEffect(() => {
-        setAlumnos(ALUMNOS_DATA);
-    }, []); 
+        const fetchAlumnos = async () => {
+            
+            // 1. OBTENER EL TOKEN DEL LOCAL STORAGE
+            const token = localStorage.getItem("token"); 
+
+            if (!token) {
+                console.warn("Usuario no autenticado. La lista de alumnos no se cargará.");
+                // Si no hay token, no hacemos la llamada API para evitar el 401
+                return; 
+            }
+
+            try {
+                // 2. ADJUNTAR EL TOKEN A LA PETICIÓN
+                const res = await fetch("/api/alumnos", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // ¡CLAVE: AUTORIZACIÓN!
+                    }
+                }); 
+
+                if (res.status === 401) {
+                    console.error("Sesión expirada o no autorizada. Limpie la sesión y redirija al login.");
+                    // Aquí podrías forzar el logout si tuvieras la función global.
+                    return;
+                }
+                
+                const data = await res.json();
+                setAlumnos(data);
+                
+            } catch (err) {
+                console.error("Error cargando alumnos:", err);
+            }
+        };
+        fetchAlumnos();
+    }, []);
+
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -58,8 +87,8 @@ const Constancias = () => {
         }
     };
     
-    // 🚨 FUNCIÓN DE GENERACIÓN DE PDF REESCRITA CON jsPDF
-    const handleEmitir = () => {
+    // 🚨 FUNCIÓN DE GENERACIÓN DE PDF: ASÍNCRONA y con llamada a la API
+    const handleEmitir = async () => { 
         if (!alumnoEncontrado || formData.tipoConstancia === TIPOS_CONSTANCIA[0]) {
             alert("Verifique que haya un alumno y un tipo de constancia seleccionados.");
             return;
@@ -86,23 +115,36 @@ const Constancias = () => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
         
-        // --- CONTENIDO GENERAL (Para Título, Materia Aprobada, Regular) ---
+        // --- CONTENIDO GENERAL (Común o Historial) ---
         let contentStart = 40;
         let filename = `${alumnoEncontrado.apellido}_${tipo.replace(/\s/g, '_')}.pdf`;
-        
-        if (tipo !== "Historial académico") {
-            const textoCertificado = `El presente certificado acredita que el/la alumno/a ${nombreAlumno}, identificado/a con DNI N° ${alumnoEncontrado.dni}, es ${tipo.toLowerCase()} de la carrera ${alumnoEncontrado.curso || 'No especificado'}.`;
-            
-            doc.text(
-                textoCertificado,
-                15,
-                contentStart,
-                { maxWidth: 180 }
-            );
-            contentStart += 20; // Dejar espacio para el texto
+        let historialData = []; // Variable para almacenar el historial real
 
-        } else {
-            // --- CONTENIDO ESPECÍFICO PARA HISTORIAL ACADÉMICO (Usando autoTable) ---
+        if (tipo === "Historial académico") {
+            
+            // 🚨 LLAMADA A LA API ASÍNCRONA para obtener datos reales
+            try {
+                // Utilizamos el ID del alumno para la consulta en el backend
+                const res = await fetch(`/api/constancias/historial/${alumnoEncontrado.id}`);
+                
+                if (!res.ok) {
+                     // Lanzar error si la respuesta HTTP no es 200-299
+                     throw new Error(`Error ${res.status}: No se pudo obtener el historial académico.`);
+                }
+                historialData = await res.json();
+                
+                if (historialData.length === 0) {
+                     alert("El alumno no tiene registros académicos (inscripciones) para mostrar.");
+                     return;
+                }
+                
+            } catch (error) {
+                console.error("Error al obtener historial:", error);
+                alert(`Error al cargar el historial: ${error.message}.`);
+                return; // Detener la generación del PDF si falla la API
+            }
+            
+            // --- TEXTO INTRODUCTORIO HISTORIAL ---
             const textoHistorial = `El presente certificado acredita que el/la alumna/o ${nombreAlumno} ha cursado y/o aprobado las asignaturas detalladas a continuación, conforme a los registros académicos del Instituto Superior Prisma.`;
             doc.text(
                 textoHistorial,
@@ -112,31 +154,38 @@ const Constancias = () => {
             );
             contentStart += 10;
             
-            // 🚨 SIMULACIÓN DE DATOS DE HISTORIAL (Reemplazar con datos reales)
-            const historialSimulado = [
-                ["Programación I", "A", "8.5", "07/2023", "Aprobado"],
-                ["Base de Datos", "B", "7.0", "12/2023", "Aprobado"],
-                ["Inglés Técnico", "A", "--", "07/2024", "En curso"],
-            ];
-            
+            // --- TABLA DE DATOS CON autoTable ---
             autoTable(doc, {
-                head: [["Materia", "Comisión", "Nota Final", "Fecha", "Estado"]],
-                body: historialSimulado,
+                head: [["Materia", "Comisión", "Nota Final", "Fecha Insc.", "Estado"]],
+                body: historialData, // 👈 DATOS REALES DE LA API
                 startY: contentStart + 5,
                 theme: "grid",
                 headStyles: { fillColor: [40, 40, 90], textColor: 255, fontStyle: "bold" },
                 styles: { halign: "center", valign: "middle" },
             });
+            
             contentStart = doc.lastAutoTable.finalY + 15;
             filename = `Historial_${alumnoEncontrado.apellido}.pdf`;
+            
+        } else {
+            // --- OTROS TIPOS DE CONSTANCIA ---
+            const textoCertificado = `El presente certificado acredita que el/la alumno/a ${nombreAlumno}, identificado/a con DNI N° ${alumnoEncontrado.dni}, es ${tipo.toLowerCase()} de la carrera ${alumnoEncontrado.curso || 'No especificado'}.`;
+            
+            doc.text(
+                textoCertificado,
+                15,
+                contentStart,
+                { maxWidth: 180 }
+            );
+            contentStart += 20; 
         }
 
         // --- PIE DE PÁGINA (Firma y Sello) ---
         let baseY = contentStart + 15;
         
-        // Si el historial fue muy largo, la tabla ajustará baseY automáticamente.
-        if (tipo === "Historial académico") {
-             baseY = doc.lastAutoTable.finalY + 25;
+        // Ajustar la posición vertical si se usó autoTable
+        if (tipo === "Historial académico" && doc.lastAutoTable) {
+              baseY = doc.lastAutoTable.finalY + 25;
         }
 
         doc.setFont("helvetica", "bold");
@@ -161,16 +210,10 @@ const Constancias = () => {
         setAlumnoEncontrado(null);
     };
 
-    // La función handleEmitir está ahora en el render para ser llamada
     
-    // ... (El resto del return es igual a la versión anterior, pero sin el div oculto) ...
-
     return (
         <main className="contenido-gestion">
             
-            {/* 🚨 Eliminamos el div de la constancia (constanciaRef) */}
-            
-            {/* Contenido Visible de la Interfaz */}
             <header className="cabecera-instituto">
                 <div className="logo-instituto"></div>
                 <h1 className="nombre-instituto">Instituto Superior Prisma</h1>
@@ -234,7 +277,7 @@ const Constancias = () => {
                                 type="text" 
                                 id="carrera-alumno" 
                                 className="input-form medio" 
-                                value={alumnoEncontrado ? alumnoEncontrado.curso : ''}
+                                value={alumnoEncontrado ? alumnoEncontrado.curso : ''} 
                                 disabled
                             />
                         </div>
