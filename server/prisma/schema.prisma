@@ -19,6 +19,7 @@ model usuarios {
   username        String           @unique(map: "username") @db.VarChar(50)
   password_hash   String           @db.VarChar(255)
   rol_id          Int
+  avatar_url      String?          @db.VarChar(255)
   administradores administradores?
   alumno          alumnos?
   docentes        docentes?

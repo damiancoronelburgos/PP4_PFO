@@ -1,6 +1,7 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import path from "node:path";
 
 import authRoutes from "./routes/auth.routes.js";
 import alumnosRoutes from "./routes/alumnos.routes.js";
@@ -42,5 +43,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
+
+app.use(
+  "/uploads",
+  express.static(path.resolve("uploads"))
+);
 
 export default app;

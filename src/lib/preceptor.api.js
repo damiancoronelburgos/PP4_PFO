@@ -1,9 +1,25 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
+import { apiGet, apiPost, apiPatch, apiDelete, API_ORIGIN } from "./api";
+
+function normalizeAvatarUrl(rawUrl) {
+  if (!rawUrl) return null;
+  if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+
+  if (rawUrl.startsWith("/")) {
+    return `${API_ORIGIN}${rawUrl}`;
+  }
+
+  return `${API_ORIGIN}/${rawUrl}`;
+}
 
 // Datos del preceptor logueado
 export async function fetchPreceptorMe() {
   try {
     const data = await apiGet("/api/preceptores/me/datos");
+
+    if (data && data.avatarUrl) {
+      data.avatarUrl = normalizeAvatarUrl(data.avatarUrl);
+    }
+
     return data || null;
   } catch (err) {
     console.error("fetchPreceptorMe error", err);
@@ -137,6 +153,59 @@ export async function sendPreceptorComunicado(payload) {
     return {
       ok: false,
       error: err?.message || "No se pudo enviar el comunicado.",
+    };
+  }
+}
+
+export async function uploadPreceptorAvatar(file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  try {
+    const res = await fetch(
+      `${API_ORIGIN}/api/preceptores/me/avatar`,
+      {
+        method: "POST",
+        headers: {
+          ...(localStorage.getItem("token") && {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          }),
+        },
+        body: formData,
+      }
+    );
+
+    const body = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const msg =
+        body && body.error
+          ? body.error
+          : `HTTP ${res.status}`;
+      return { ok: false, error: msg };
+    }
+
+    if (body && body.avatarUrl) {
+      body.avatarUrl = normalizeAvatarUrl(body.avatarUrl);
+    }
+
+    return { ok: true, data: body };
+  } catch (err) {
+    console.error("uploadPreceptorAvatar error", err);
+    return { ok: false, error: err.message || "Error al subir avatar" };
+  }
+}
+
+// Cambio de contraseña del preceptor logueado
+export async function changePreceptorPassword(payload) {
+  try {
+    await apiPost("/api/preceptores/me/password", payload);
+    return { ok: true };
+  } catch (err) {
+    console.error("changePreceptorPassword error", err);
+    return {
+      ok: false,
+      error: err?.message || "No se pudo cambiar la contraseña.",
     };
   }
 }

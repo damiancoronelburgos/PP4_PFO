@@ -2,7 +2,9 @@ const API_BASE = (
   import.meta.env.VITE_API_BASE ||
   import.meta.env.VITE_API_URL ||
   "http://localhost:3000/api"
-).replace(/\/+$/, ""); // sin / al final
+).replace(/\/+$/, "");
+
+export const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 function normalizePath(path) {
   if (!path.startsWith("/")) path = `/${path}`;
@@ -77,6 +79,18 @@ export async function apiPost(path, data) {
   return handleResponse(res);
 }
 
+export async function apiPostForm(path, formData) {
+  const res = await fetch(buildUrl(path), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      ...authHeader(),
+    },
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
 export async function apiPut(path, data) {
   const res = await fetch(buildUrl(path), {
     method: "PUT",
@@ -116,7 +130,7 @@ export async function apiDelete(path) {
   return handleResponse(res);
 }
 
-// === API VIEJA (compatibilidad con lo que ya tenías) ===
+// === API VIEJA (compatibilidad) ===
 
 export async function apiFetch(path, opts = {}) {
   const {

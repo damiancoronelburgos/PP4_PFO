@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { auth, allowRoles } from "../middlewares/auth.js";
+import upload from "../middlewares/uploadAvatar.js";
 import {
   getPreceptorDatos,
   getPreceptorComisiones,
@@ -11,6 +12,8 @@ import {
   updatePreceptorNotificacion,
   deletePreceptorNotificacion,
   sendPreceptorComunicacion,
+  updatePreceptorAvatar,
+  changePreceptorPassword, // ⬅️ NUEVO
 } from "../controllers/preceptores.controller.js";
 
 const router = Router();
@@ -68,6 +71,22 @@ router.post(
   auth,
   allowRoles("preceptor"),
   sendPreceptorComunicacion
+);
+
+router.post(
+  "/me/avatar",
+  auth,
+  allowRoles("preceptor"),
+  upload.single("avatar"),
+  updatePreceptorAvatar
+);
+
+// 🔐 Cambio de contraseña
+router.post(
+  "/me/password",
+  auth,
+  allowRoles("preceptor"),
+  changePreceptorPassword
 );
 
 export default router;
