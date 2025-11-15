@@ -1,13 +1,13 @@
-// ESM
+// ===== Prisma Client (singleton) =====
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export default prisma;         // <-- default export
-// opcional: named
+// Export default + named
+export default prisma;
 export { prisma };
 
-// cierre limpio
+// ===== Cierre limpio =====
 process.on("beforeExit", async () => {
   await prisma.$disconnect();
 });

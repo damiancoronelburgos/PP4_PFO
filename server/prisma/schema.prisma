@@ -159,7 +159,7 @@ model instituto {
 }
 
 model justificaciones {
-  id            Int                     @id
+  id            Int                     @id @default(autoincrement())
   alumno_id     Int
   comision_id   Int
   fecha         DateTime                @db.Date
@@ -169,6 +169,7 @@ model justificaciones {
   alumnos       alumnos                 @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_j_alum")
   comisiones    comisiones              @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_j_com")
 
+  @@unique([alumno_id, comision_id, fecha], map: "uq_justif_alum_com_fecha")
   @@index([alumno_id], map: "fk_j_alum")
   @@index([comision_id, fecha], map: "idx_justif_com_fecha")
 }

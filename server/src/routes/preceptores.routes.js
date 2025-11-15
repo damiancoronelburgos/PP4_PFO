@@ -17,15 +17,37 @@ import {
   getPreceptorEventosCalendario,
   createPreceptorEventoCalendario,
   deletePreceptorEventoCalendario,
+  getPreceptorJustificaciones,
+  savePreceptorJustificacionesEstado,
 } from "../controllers/preceptores.controller.js";
 
 const router = Router();
 
-router.get("/me/datos", auth, allowRoles("preceptor"), getPreceptorDatos);
-router.get("/me/comisiones", auth, allowRoles("preceptor"), getPreceptorComisiones);
-router.get("/me/alumnos-metrics", auth, allowRoles("preceptor"), getPreceptorAlumnosMetrics);
+// ===== Datos generales =====
 
-// Asistencia
+router.get(
+  "/me/datos",
+  auth,
+  allowRoles("preceptor"),
+  getPreceptorDatos
+);
+
+router.get(
+  "/me/comisiones",
+  auth,
+  allowRoles("preceptor"),
+  getPreceptorComisiones
+);
+
+router.get(
+  "/me/alumnos-metrics",
+  auth,
+  allowRoles("preceptor"),
+  getPreceptorAlumnosMetrics
+);
+
+// ===== Asistencia =====
+
 router.get(
   "/me/asistencias/fechas",
   auth,
@@ -47,7 +69,24 @@ router.post(
   savePreceptorAsistencias
 );
 
-// Notificaciones
+// ===== Justificaciones =====
+
+router.get(
+  "/me/justificaciones",
+  auth,
+  allowRoles("preceptor"),
+  getPreceptorJustificaciones
+);
+
+router.post(
+  "/me/justificaciones/estado",
+  auth,
+  allowRoles("preceptor"),
+  savePreceptorJustificacionesEstado
+);
+
+// ===== Notificaciones / comunicaciones =====
+
 router.get(
   "/me/notificaciones",
   auth,
@@ -76,6 +115,8 @@ router.post(
   sendPreceptorComunicacion
 );
 
+// ===== Avatar / contraseña =====
+
 router.post(
   "/me/avatar",
   auth,
@@ -84,7 +125,6 @@ router.post(
   updatePreceptorAvatar
 );
 
-// Cambio de contraseña
 router.post(
   "/me/password",
   auth,
@@ -92,7 +132,8 @@ router.post(
   changePreceptorPassword
 );
 
-// Calendario (eventos)
+// ===== Calendario (eventos) =====
+
 router.get(
   "/me/eventos-calendario",
   auth,

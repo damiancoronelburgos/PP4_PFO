@@ -1,3 +1,4 @@
+// ===== Config base =====
 const API_BASE = (
   import.meta.env.VITE_API_BASE ||
   import.meta.env.VITE_API_URL ||
@@ -6,16 +7,16 @@ const API_BASE = (
 
 export const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
+// ===== Helpers de URL / auth =====
 function normalizePath(path) {
   if (!path.startsWith("/")) path = `/${path}`;
 
   const baseHasApi = API_BASE.endsWith("/api");
 
   if (baseHasApi && path.startsWith("/api/")) {
-    // BASE ya tiene /api, y el path también -> evitar /api/api/...
-    path = path.slice(4); // "/api".length === 4 => queda "/resto"
+    // Evitar /api/api/...
+    path = path.slice(4);
   } else if (!baseHasApi && !path.startsWith("/api/")) {
-    // BASE sin /api y path sin /api -> lo agregamos
     path = `/api${path}`;
   }
 
@@ -34,27 +35,30 @@ function authHeader() {
 async function handleResponse(res) {
   const ct = res.headers.get("content-type") || "";
   const isJson = ct.includes("application/json");
-  const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
+  const body = isJson
+    ? await res.json().catch(() => null)
+    : await res.text().catch(() => null);
 
   if (!res.ok) {
     if (res.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("authToken");
     }
+
     const msg =
       body && typeof body === "object" && body.error
         ? body.error
         : typeof body === "string" && body
         ? body
         : `HTTP ${res.status}`;
+
     throw new Error(msg);
   }
 
   return body;
 }
 
-// === API NUEVA (que ya estás usando en preceptor.api) ===
-
+// ===== API básica (JSON) =====
 export async function apiGet(path) {
   const res = await fetch(buildUrl(path), {
     method: "GET",
@@ -104,7 +108,6 @@ export async function apiPut(path, data) {
   return handleResponse(res);
 }
 
-// ⬇⬇⬇ NUEVO: apiPatch para la API nueva
 export async function apiPatch(path, data) {
   const res = await fetch(buildUrl(path), {
     method: "PATCH",
@@ -117,7 +120,6 @@ export async function apiPatch(path, data) {
   });
   return handleResponse(res);
 }
-// ⬆⬆⬆
 
 export async function apiDelete(path) {
   const res = await fetch(buildUrl(path), {
@@ -130,8 +132,7 @@ export async function apiDelete(path) {
   return handleResponse(res);
 }
 
-// === API VIEJA (compatibilidad) ===
-
+// ===== API genérica (compatibilidad) =====
 export async function apiFetch(path, opts = {}) {
   const {
     method = "GET",

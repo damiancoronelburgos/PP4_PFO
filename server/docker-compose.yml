@@ -30,7 +30,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./uploads:/app/server/uploads   # <– aquí montamos las imágenes
+      - ./uploads:/app/server/uploads
 
 volumes:
   dbdata:

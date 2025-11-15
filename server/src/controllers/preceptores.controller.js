@@ -3,8 +3,9 @@ import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
 
-
 const DEFAULT_AVATAR_URL = "/uploads/avatars/default-avatar.png";
+
+// ===== Helpers generales =====
 
 function parseDiaSemanaFromHorario(horario) {
   if (!horario) return null;
@@ -46,7 +47,7 @@ function todayInBuenosAiresDate() {
   const month = parts.find((p) => p.type === "month").value;
   const day = parts.find((p) => p.type === "day").value;
 
-  const isoDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+  const isoDate = `${year}-${month}-${day}`;
   return new Date(isoDate + "T00:00:00Z");
 }
 
@@ -61,8 +62,8 @@ function formatDateLocal(date) {
 
 function resolveAvatarDiskPath(avatarUrl) {
   if (!avatarUrl) return null;
-  const clean = avatarUrl.replace(/^\/+/, ""); // quita /
-  return path.resolve(clean); // resuelve desde el cwd del contenedor (/app/server)
+  const clean = avatarUrl.replace(/^\/+/, "");
+  return path.resolve(clean);
 }
 
 async function getPreceptorOr404(req, res) {
@@ -75,8 +76,11 @@ async function getPreceptorOr404(req, res) {
     res.status(404).json({ error: "Preceptor no encontrado" });
     return null;
   }
+
   return me;
 }
+
+// ===== Perfil / datos básicos =====
 
 // GET /api/preceptores/me/datos
 export async function getPreceptorDatos(req, res, next) {
@@ -107,6 +111,8 @@ export async function getPreceptorDatos(req, res, next) {
     next(err);
   }
 }
+
+// ===== Comisiones / alumnos =====
 
 // GET /api/preceptores/me/comisiones
 export async function getPreceptorComisiones(req, res, next) {
@@ -147,7 +153,9 @@ export async function getPreceptorComisiones(req, res, next) {
         horario: c.horario || "-",
         sede: c.sede || "Central",
         aula: c.aula || "A confirmar",
-        docente: c.docentes ? `${c.docentes.nombre} ${c.docentes.apellido}` : "-",
+        docente: c.docentes
+          ? `${c.docentes.nombre} ${c.docentes.apellido}`
+          : "-",
         estado: c.estado || "Activo",
         cupo: c.cupo ?? null,
       };
@@ -212,6 +220,8 @@ export async function getPreceptorAlumnosMetrics(req, res, next) {
   }
 }
 
+// ===== Asistencias =====
+
 // GET /api/preceptores/me/asistencias/fechas?comisionId=1
 export async function getPreceptorAsistenciasFechas(req, res, next) {
   try {
@@ -250,7 +260,7 @@ export async function getPreceptorAsistenciasFechas(req, res, next) {
   }
 }
 
-// GET /api/preceptores/me/asistencias?comisionId=1&fecha=2025-09-19
+// GET /api/preceptores/me/asistencias?comisionId=1&fecha=YYYY-MM-DD
 export async function getPreceptorAsistenciasLista(req, res, next) {
   try {
     const me = await getPreceptorOr404(req, res);
@@ -389,6 +399,8 @@ export async function savePreceptorAsistencias(req, res, next) {
   }
 }
 
+// ===== Notificaciones =====
+
 // GET /api/preceptores/me/notificaciones
 export async function getPreceptorNotificaciones(req, res, next) {
   try {
@@ -398,9 +410,7 @@ export async function getPreceptorNotificaciones(req, res, next) {
     const userId = me.usuario_id;
 
     const rows = await prisma.notificaciones.findMany({
-      where: {
-        usuario_id: userId,
-      },
+      where: { usuario_id: userId },
       orderBy: [{ fecha: "desc" }, { id: "desc" }],
     });
 
@@ -445,12 +455,8 @@ export async function updatePreceptorNotificacion(req, res, next) {
     }
 
     const data = {};
-    if (typeof req.body.leida === "boolean") {
-      data.leida = req.body.leida;
-    }
-    if (typeof req.body.favorito === "boolean") {
-      data.favorito = req.body.favorito;
-    }
+    if (typeof req.body.leida === "boolean") data.leida = req.body.leida;
+    if (typeof req.body.favorito === "boolean") data.favorito = req.body.favorito;
 
     if (Object.keys(data).length === 0) {
       return res.status(400).json({ error: "Nada para actualizar" });
@@ -480,6 +486,7 @@ export async function updatePreceptorNotificacion(req, res, next) {
   }
 }
 
+// DELETE /api/preceptores/me/notificaciones/:id
 export async function deletePreceptorNotificacion(req, res, next) {
   try {
     const me = await getPreceptorOr404(req, res);
@@ -493,25 +500,22 @@ export async function deletePreceptorNotificacion(req, res, next) {
     }
 
     const notif = await prisma.notificaciones.findFirst({
-      where: {
-        id,
-        usuario_id: userId,
-      },
+      where: { id, usuario_id: userId },
     });
 
     if (!notif) {
       return res.status(404).json({ error: "Notificación no encontrada" });
     }
 
-    await prisma.notificaciones.delete({
-      where: { id },
-    });
+    await prisma.notificaciones.delete({ where: { id } });
 
     res.status(204).end();
   } catch (err) {
     next(err);
   }
 }
+
+// ===== Comunicaciones =====
 
 // POST /api/preceptores/me/comunicaciones
 export async function sendPreceptorComunicacion(req, res, next) {
@@ -548,7 +552,7 @@ export async function sendPreceptorComunicacion(req, res, next) {
     const destinatarios = new Map();
     const emailsSinUsuario = [];
 
-    // Destinatarios por comisión (alumnos de esas comisiones)
+    // Destinatarios por comisión
     for (const comId of comIds) {
       const vinculo = await prisma.preceptor_comision.findFirst({
         where: { preceptor_id: me.id, comision_id: comId },
@@ -576,7 +580,7 @@ export async function sendPreceptorComunicacion(req, res, next) {
       }
     }
 
-    // Destinatarios por email (alumnos o docentes con usuario)
+    // Destinatarios por email (alumnos/docentes)
     for (const email of uniqueEmails) {
       let found = false;
 
@@ -656,6 +660,8 @@ export async function sendPreceptorComunicacion(req, res, next) {
     next(err);
   }
 }
+
+// ===== Avatar / contraseña =====
 
 // POST /api/preceptores/me/avatar
 export async function updatePreceptorAvatar(req, res, next) {
@@ -770,6 +776,8 @@ export async function changePreceptorPassword(req, res, next) {
   }
 }
 
+// ===== Eventos de calendario =====
+
 // GET /api/preceptores/me/eventos-calendario
 export async function getPreceptorEventosCalendario(req, res, next) {
   try {
@@ -806,9 +814,7 @@ export async function getPreceptorEventosCalendario(req, res, next) {
           ? Number(r.comisionId)
           : Number(r.comisionId);
 
-      const fechaStr = r.fecha
-        ? formatDateLocal(r.fecha)
-        : null;
+      const fechaStr = r.fecha ? formatDateLocal(r.fecha) : null;
 
       return {
         id: idNum,
@@ -828,7 +834,7 @@ export async function getPreceptorEventosCalendario(req, res, next) {
 }
 
 // POST /api/preceptores/me/eventos-calendario
-// body esperado: { fecha: "YYYY-MM-DD", titulo: string, comisionId: number }
+// body: { fecha: "YYYY-MM-DD", titulo: string, comisionId: number }
 export async function createPreceptorEventoCalendario(req, res, next) {
   try {
     const me = await getPreceptorOr404(req, res);
@@ -854,7 +860,6 @@ export async function createPreceptorEventoCalendario(req, res, next) {
       return res.status(400).json({ error: "comisionId inválido." });
     }
 
-    // Validar que la comisión pertenezca al preceptor actual
     const vinculo = await prisma.preceptor_comision.findFirst({
       where: { preceptor_id: me.id, comision_id: comisionIdNum },
       select: { comision_id: true },
@@ -866,16 +871,13 @@ export async function createPreceptorEventoCalendario(req, res, next) {
         .json({ error: "No estás asignado a esa comisión." });
     }
 
-    // Como la tabla eventos no tiene AUTO_INCREMENT definido en Prisma,
-    // generamos el próximo id manualmente.
     const rowsMax = await prisma.$queryRaw`
       SELECT COALESCE(MAX(id), 0) AS maxId
       FROM eventos;
     `;
 
-    const maxRow = Array.isArray(rowsMax) && rowsMax.length > 0
-      ? rowsMax[0]
-      : { maxId: 0 };
+    const maxRow =
+      Array.isArray(rowsMax) && rowsMax.length > 0 ? rowsMax[0] : { maxId: 0 };
 
     const maxId =
       typeof maxRow.maxId === "bigint"
@@ -884,13 +886,11 @@ export async function createPreceptorEventoCalendario(req, res, next) {
 
     const newId = maxId + 1;
 
-    // Insert directo con SQL para evitar problemas de timezone con Date
     await prisma.$executeRaw`
       INSERT INTO eventos (id, fecha, titulo, comision_id)
       VALUES (${newId}, ${fecha}, ${titulo}, ${comisionIdNum});
     `;
 
-    // Recuperar el evento recién creado con el mismo shape que el GET
     const rowsCreated = await prisma.$queryRaw`
       SELECT
         e.id AS id,
@@ -986,6 +986,134 @@ export async function deletePreceptorEventoCalendario(req, res, next) {
     await prisma.eventos.delete({ where: { id } });
 
     res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== Justificaciones =====
+
+// GET /api/preceptores/me/justificaciones
+export async function getPreceptorJustificaciones(req, res, next) {
+  try {
+    const me = await getPreceptorOr404(req, res);
+    if (!me) return;
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        j.id              AS id,
+        j.fecha           AS fecha,
+        j.estado          AS estado,
+        j.motivo          AS motivo,
+        j.documento_url   AS documentoUrl,
+        j.alumno_id       AS alumnoId,
+        j.comision_id     AS comisionId,
+        a.apellido        AS alumnoApellido,
+        a.nombre          AS alumnoNombre,
+        a.dni             AS alumnoDni,
+        c.codigo          AS comisionCodigo,
+        m.nombre          AS materiaNombre,
+        m.codigo          AS materiaCodigo
+      FROM justificaciones j
+        INNER JOIN alumnos a ON a.id = j.alumno_id
+        INNER JOIN comisiones c ON c.id = j.comision_id
+        INNER JOIN materias m ON m.id = c.materia_id
+        INNER JOIN preceptor_comision pc ON pc.comision_id = c.id
+      WHERE pc.preceptor_id = ${me.id}
+      ORDER BY j.fecha DESC, j.id DESC;
+    `;
+
+    const out = (rows || []).map((r) => {
+      const idNum = typeof r.id === "bigint" ? Number(r.id) : Number(r.id);
+      const alumnoIdNum =
+        typeof r.alumnoId === "bigint"
+          ? Number(r.alumnoId)
+          : Number(r.alumnoId);
+      const comisionIdNum =
+        typeof r.comisionId === "bigint"
+          ? Number(r.comisionId)
+          : Number(r.comisionId);
+      const fechaStr = r.fecha ? formatDateLocal(r.fecha) : null;
+
+      return {
+        id: idNum,
+        alumnoId: alumnoIdNum,
+        alumnoApellido: r.alumnoApellido,
+        alumnoNombre: r.alumnoNombre,
+        alumnoDni: r.alumnoDni,
+        comisionId: comisionIdNum,
+        comisionCodigo: r.comisionCodigo,
+        materiaNombre: r.materiaNombre,
+        materiaCodigo: r.materiaCodigo,
+        fecha: fechaStr,
+        estado: r.estado,
+        motivo: r.motivo,
+        documentoUrl: r.documentoUrl,
+      };
+    });
+
+    res.json(out);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/preceptores/me/justificaciones/estado
+// body: { updates: [{ id, estado: 'pendiente' | 'aprobada' | 'rechazada' }, ...] }
+export async function savePreceptorJustificacionesEstado(req, res, next) {
+  try {
+    const me = await getPreceptorOr404(req, res);
+    if (!me) return;
+
+    const { updates } = req.body || {};
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ error: "No hay cambios para guardar." });
+    }
+
+    const allowedEstados = new Set(["pendiente", "aprobada", "rechazada"]);
+
+    const clean = updates
+      .map((u) => ({
+        id: Number(u.id),
+        estado: String(u.estado || "").trim().toLowerCase(),
+      }))
+      .filter(
+        (u) =>
+          u.id && !Number.isNaN(u.id) && allowedEstados.has(u.estado)
+      );
+
+    if (clean.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "No hay actualizaciones válidas." });
+    }
+
+    let total = 0;
+
+    await prisma.$transaction(async (tx) => {
+      for (const u of clean) {
+        const result = await tx.$executeRaw`
+          UPDATE justificaciones j
+            INNER JOIN preceptor_comision pc
+              ON pc.comision_id = j.comision_id
+          SET j.estado = ${u.estado}
+          WHERE j.id = ${u.id}
+            AND pc.preceptor_id = ${me.id};
+        `;
+
+        if (typeof result === "bigint") {
+          total += Number(result);
+        } else if (typeof result === "number") {
+          total += result;
+        }
+      }
+    });
+
+    res.json({
+      ok: true,
+      updated: total,
+    });
   } catch (err) {
     next(err);
   }

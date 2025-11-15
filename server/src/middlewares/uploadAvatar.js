@@ -2,13 +2,14 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+// ===== Directorio de avatares =====
 const AVATAR_DIR = path.resolve("uploads", "avatars");
 
-// Crea la carpeta si no existe
 if (!fs.existsSync(AVATAR_DIR)) {
   fs.mkdirSync(AVATAR_DIR, { recursive: true });
 }
 
+// ===== Storage y nombre de archivo =====
 const storage = multer.diskStorage({
   destination(req, file, cb) {
     cb(null, AVATAR_DIR);
@@ -21,6 +22,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// ===== Filtro de tipo de archivo =====
 function fileFilter(req, file, cb) {
   const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
   if (allowed.includes(file.mimetype)) {
@@ -30,6 +32,7 @@ function fileFilter(req, file, cb) {
   }
 }
 
+// ===== Instancia de multer =====
 const upload = multer({
   storage,
   fileFilter,

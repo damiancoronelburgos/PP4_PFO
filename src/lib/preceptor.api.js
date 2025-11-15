@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPatch, apiDelete, API_ORIGIN } from "./api";
 
+// ===== Helpers =====
 function normalizeAvatarUrl(rawUrl) {
   if (!rawUrl) return null;
   if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
@@ -11,7 +12,14 @@ function normalizeAvatarUrl(rawUrl) {
   return `${API_ORIGIN}/${rawUrl}`;
 }
 
-// Datos del preceptor logueado
+function normalizeDocumentoUrl(rawUrl) {
+  if (!rawUrl) return null;
+  if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+  if (!rawUrl.startsWith("/")) rawUrl = `/${rawUrl}`;
+  return `${API_ORIGIN}${rawUrl}`;
+}
+
+// ===== Perfil / Datos del preceptor =====
 export async function fetchPreceptorMe() {
   try {
     const data = await apiGet("/api/preceptores/me/datos");
@@ -27,7 +35,7 @@ export async function fetchPreceptorMe() {
   }
 }
 
-// Comisiones asignadas al preceptor logueado
+// ===== Comisiones / Alumnos =====
 export async function fetchPreceptorComisiones() {
   try {
     const data = await apiGet("/api/preceptores/me/comisiones");
@@ -38,7 +46,6 @@ export async function fetchPreceptorComisiones() {
   }
 }
 
-// Métricas de alumnos (panel Alumnos)
 export async function fetchPreceptorAlumnosMetrics() {
   try {
     const data = await apiGet("/api/preceptores/me/alumnos-metrics");
@@ -49,7 +56,7 @@ export async function fetchPreceptorAlumnosMetrics() {
   }
 }
 
-// Fechas con asistencia cargada para una comisión
+// ===== Asistencias =====
 export async function fetchPreceptorAsistenciaFechas(comisionId) {
   if (!comisionId) return [];
   try {
@@ -65,7 +72,6 @@ export async function fetchPreceptorAsistenciaFechas(comisionId) {
   }
 }
 
-// Lista de alumnos + estado de asistencia para una comisión y fecha
 export async function fetchPreceptorAsistenciaLista(comisionId, fecha) {
   if (!comisionId || !fecha) return [];
   try {
@@ -81,7 +87,6 @@ export async function fetchPreceptorAsistenciaLista(comisionId, fecha) {
   }
 }
 
-// Guardar asistencia de una comisión y fecha
 // payload: { comisionId, fecha, items: [{ alumnoId, estado }, ...] }
 export async function savePreceptorAsistencia(payload) {
   try {
@@ -96,8 +101,43 @@ export async function savePreceptorAsistencia(payload) {
   }
 }
 
+// ===== Justificaciones =====
+export async function fetchPreceptorJustificaciones() {
+  try {
+    const data = await apiGet("/api/preceptores/me/justificaciones");
+    if (!Array.isArray(data)) return [];
 
-// Notificaciones del preceptor logueado
+    return data.map((j) => ({
+      ...j,
+      documentoUrl: j.documentoUrl
+        ? normalizeDocumentoUrl(j.documentoUrl)
+        : null,
+    }));
+  } catch (err) {
+    console.error("fetchPreceptorJustificaciones error", err);
+    return [];
+  }
+}
+
+// updates: [{ id, estado: 'pendiente' | 'aprobada' | 'rechazada' }, ...]
+export async function savePreceptorJustificacionesEstado(updates) {
+  try {
+    const payload = { updates: Array.isArray(updates) ? updates : [] };
+    const data = await apiPost(
+      "/api/preceptores/me/justificaciones/estado",
+      payload
+    );
+    return { ok: true, data };
+  } catch (err) {
+    console.error("savePreceptorJustificacionesEstado error", err);
+    return {
+      ok: false,
+      error: err?.message || "No se pudieron guardar los cambios.",
+    };
+  }
+}
+
+// ===== Notificaciones =====
 export async function fetchPreceptorNotificaciones() {
   try {
     const data = await apiGet("/api/preceptores/me/notificaciones");
@@ -108,7 +148,6 @@ export async function fetchPreceptorNotificaciones() {
   }
 }
 
-// Actualizar notificación (leída / favorita)
 // fields: { leida?: boolean, favorito?: boolean }
 export async function updatePreceptorNotificacion(id, fields = {}) {
   if (!id) return null;
@@ -144,6 +183,7 @@ export async function deletePreceptorNotificacion(id) {
   }
 }
 
+// ===== Comunicaciones =====
 export async function sendPreceptorComunicado(payload) {
   try {
     const data = await apiPost("/api/preceptores/me/comunicaciones", payload);
@@ -157,31 +197,26 @@ export async function sendPreceptorComunicado(payload) {
   }
 }
 
+// ===== Avatar / Contraseña =====
 export async function uploadPreceptorAvatar(file) {
   const formData = new FormData();
   formData.append("avatar", file);
 
   try {
-    const res = await fetch(
-      `${API_ORIGIN}/api/preceptores/me/avatar`,
-      {
-        method: "POST",
-        headers: {
-          ...(localStorage.getItem("token") && {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          }),
-        },
-        body: formData,
-      }
-    );
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_ORIGIN}/api/preceptores/me/avatar`, {
+      method: "POST",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
 
     const body = await res.json().catch(() => null);
 
     if (!res.ok) {
-      const msg =
-        body && body.error
-          ? body.error
-          : `HTTP ${res.status}`;
+      const msg = body && body.error ? body.error : `HTTP ${res.status}`;
       return { ok: false, error: msg };
     }
 
@@ -196,7 +231,6 @@ export async function uploadPreceptorAvatar(file) {
   }
 }
 
-// Cambio de contraseña del preceptor logueado
 export async function changePreceptorPassword(payload) {
   try {
     await apiPost("/api/preceptores/me/password", payload);
@@ -210,7 +244,7 @@ export async function changePreceptorPassword(payload) {
   }
 }
 
-// Calendario del preceptor (eventos)
+// ===== Calendario =====
 export async function fetchPreceptorEventosCalendario() {
   try {
     const data = await apiGet("/api/preceptores/me/eventos-calendario");
@@ -221,11 +255,13 @@ export async function fetchPreceptorEventosCalendario() {
   }
 }
 
-// Crear nuevo evento de calendario para una comisión del preceptor
 // payload: { fecha: "YYYY-MM-DD", titulo: string, comisionId: number }
 export async function createPreceptorEventoCalendario(payload) {
   try {
-    const data = await apiPost("/api/preceptores/me/eventos-calendario", payload);
+    const data = await apiPost(
+      "/api/preceptores/me/eventos-calendario",
+      payload
+    );
     return { ok: true, data };
   } catch (err) {
     console.error("createPreceptorEventoCalendario error", err);

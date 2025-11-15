@@ -310,7 +310,7 @@ DROP TABLE IF EXISTS `justificaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `justificaciones` (
-  `id` int NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `alumno_id` int NOT NULL,
   `comision_id` int NOT NULL,
   `fecha` date NOT NULL,
@@ -318,11 +318,12 @@ CREATE TABLE `justificaciones` (
   `estado` enum('pendiente','aprobada','rechazada') DEFAULT 'pendiente',
   `documento_url` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_justif_alum_com_fecha` (`alumno_id`,`comision_id`,`fecha`),
   KEY `idx_justif_com_fecha` (`comision_id`,`fecha`),
   KEY `fk_j_alum` (`alumno_id`),
   CONSTRAINT `fk_j_alum` FOREIGN KEY (`alumno_id`) REFERENCES `alumnos` (`id`),
   CONSTRAINT `fk_j_com` FOREIGN KEY (`comision_id`) REFERENCES `comisiones` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1006 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -331,7 +332,7 @@ CREATE TABLE `justificaciones` (
 
 LOCK TABLES `justificaciones` WRITE;
 /*!40000 ALTER TABLE `justificaciones` DISABLE KEYS */;
-INSERT INTO `justificaciones` VALUES (1001,2,1,'2025-09-19','Turno médico','pendiente','/docs/1001.pdf'),(1002,5,2,'2025-09-18','Enfermedad','pendiente','/docs/1002.pdf'),(1003,4,3,'2025-09-17','Familiar','aprobada','/docs/1003.pdf'),(1004,6,4,'2025-09-19','Trabajo','pendiente','/docs/1004.pdf'),(1005,10,4,'2025-09-18','Otro','rechazada','/docs/1005.pdf');
+INSERT INTO `justificaciones` VALUES (1001,2,1,'2025-09-19','Turno médico','pendiente','/uploads/docs/1001.pdf'),(1002,5,2,'2025-09-18','Enfermedad','pendiente','/uploads/docs/1002.pdf'),(1003,4,3,'2025-09-17','Familiar','pendiente','/uploads/docs/1003.pdf'),(1004,6,4,'2025-09-19','Trabajo','pendiente','/uploads/docs/1004.pdf'),(1005,10,4,'2025-09-18','Otro','rechazada','/uploads/docs/1005.pdf');
 /*!40000 ALTER TABLE `justificaciones` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -518,4 +519,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-15 17:32:51
+-- Dump completed on 2025-11-15 19:47:05

@@ -2,11 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/preceptor.css";
 
-// ===== Data (JSON locales) =====
-import alumnosRaw from "../data/alumnos.json";
-import justifRaw from "../data/justificaciones.json";
-import docentesRaw from "../data/docentes.json";
-
 // ===== API SQL (preceptor) =====
 import {
   fetchPreceptorMe,
@@ -24,26 +19,11 @@ import {
   fetchPreceptorEventosCalendario,
   createPreceptorEventoCalendario,
   deletePreceptorEventoCalendario,
+  fetchPreceptorJustificaciones,
+  savePreceptorJustificacionesEstado,
 } from "../lib/preceptor.api";
 
 // ===== Constantes / Utils =====
-const CLASES_DE_HOY = [
-  {
-    id: 1,
-    materia: "Prácticas Profesionalizantes",
-    comision: "P4-2025",
-    horario: "18:00–20:00",
-    aula: "Lab 3",
-  },
-  {
-    id: 2,
-    materia: "Análisis de Sistemas",
-    comision: "AS-2",
-    horario: "20:10–22:00",
-    aula: "Aula 12",
-  },
-];
-
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString("es-AR", {
     day: "2-digit",
@@ -69,6 +49,31 @@ const capitalizeWords = (str) => {
     .join(" ");
 };
 
+function parseDiaSemanaFromHorario(horario) {
+  if (!horario) return null;
+
+  const [diaRaw] = String(horario).trim().split(/\s+/);
+  if (!diaRaw) return null;
+
+  const diaNorm = diaRaw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  const map = {
+    lunes: 1,
+    martes: 2,
+    miercoles: 3,
+    jueves: 4,
+    viernes: 5,
+    sabado: 6,
+    domingo: 0,
+  };
+
+  if (!(diaNorm in map)) return null;
+  return map[diaNorm];
+}
+
 export default function Preceptor() {
   const navigate = useNavigate();
 
@@ -82,21 +87,19 @@ export default function Preceptor() {
   const [roles, setRoles] = useState(() =>
     JSON.parse(localStorage.getItem("roles") || '["Preceptor/a"]')
   );
-
   const [avatar, setAvatar] = useState(
     localStorage.getItem("preceptorAvatar") || "/preceptor.jpg"
   );
+  const [active, setActive] = useState(null);
+
+  const fileRef = useRef(null);
+  const choosePhoto = () => fileRef.current?.click();
 
   useEffect(() => {
     if (avatar) {
       localStorage.setItem("preceptorAvatar", avatar);
     }
   }, [avatar]);
-
-  const [active, setActive] = useState(null);
-
-  const fileRef = useRef(null);
-  const choosePhoto = () => fileRef.current?.click();
 
   const onPhotoChange = async (e) => {
     const file = e.target.files?.[0];
@@ -162,7 +165,7 @@ export default function Preceptor() {
     loadProfile();
   }, []);
 
-  // Cambio de contraseña
+  // ===== Cambio de contraseña =====
   const [showPwd, setShowPwd] = useState(false);
   const [currentPwd, setCurrentPwd] = useState("");
   const [pwd1, setPwd1] = useState("");
@@ -207,28 +210,30 @@ export default function Preceptor() {
     setPwd2("");
   };
 
-  // ===== Índices / Comisiones (JSON que siguen usando otros paneles) =====
-  const alumnosById = useMemo(
-    () => Object.fromEntries(alumnosRaw.map((a) => [a.id, a])),
-    []
-  );
-  const docentesById = useMemo(
-    () =>
-      Object.fromEntries(
-        docentesRaw.map((d) => [d.id, `${d.nombre} ${d.apellido}`])
-      ),
-    []
-  );
-
-  // ===== Comisiones desde la API (SQL) =====
+  // ===== Comisiones / Métricas alumnos =====
   const [comisionesDb, setComisionesDb] = useState([]);
   const [loadingComs, setLoadingComs] = useState(true);
   const [errComs, setErrComs] = useState(null);
 
-  // ===== Métricas de alumnos (SQL) =====
   const [alumnosMetrics, setAlumnosMetrics] = useState([]);
   const [loadingAlumnos, setLoadingAlumnos] = useState(true);
   const [errAlumnos, setErrAlumnos] = useState(null);
+
+  const clasesDeHoy = useMemo(() => {
+    const todayDow = new Date().getDay(); // 0=Dom, 1=Lun, etc.
+    return (comisionesDb || [])
+      .filter((c) => {
+        const dow = parseDiaSemanaFromHorario(c.horario);
+        return dow === todayDow;
+      })
+      .map((c) => ({
+        id: c.id,
+        materia: capitalizeWords(c.materia?.nombre ?? "-"),
+        comision: c.comision ?? "-",
+        horario: c.horario ?? "-",
+        aula: capitalizeWords(c.aula ?? "A confirmar"),
+      }));
+  }, [comisionesDb]);
 
   const comisionesDbOptions = useMemo(() => {
     const s = new Set();
@@ -295,7 +300,7 @@ export default function Preceptor() {
     })();
   }, []);
 
-  // ===== Asistencias (SQL) =====
+  // ===== Asistencias =====
   const todayISO = useMemo(() => ymd(new Date()), []);
 
   const [comisionSel, setComisionSel] = useState("");
@@ -424,46 +429,77 @@ export default function Preceptor() {
     }
   };
 
-  // ===== Justificaciones (LS + JSON) =====
-  const JUSTI_STORAGE_KEY = "pp4_preceptor_justificaciones";
-
-  const [justifDb, setJustifDb] = useState(() => {
-    const fromLS = localStorage.getItem(JUSTI_STORAGE_KEY);
-    return fromLS ? JSON.parse(fromLS) : justifRaw || [];
-  });
-
+  // ===== Justificaciones =====
+  const [justifDb, setJustifDb] = useState([]);
+  const [loadingJustif, setLoadingJustif] = useState(true);
+  const [errJustif, setErrJustif] = useState(null);
   const [jfFilter, setJfFilter] = useState("pendiente");
   const [jfQuery, setJfQuery] = useState("");
   const [jfDraft, setJfDraft] = useState({});
 
+  useEffect(() => {
+    const loadJustif = async () => {
+      try {
+        setLoadingJustif(true);
+        setErrJustif(null);
+        const data = await fetchPreceptorJustificaciones();
+        setJustifDb(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("fetchPreceptorJustificaciones error", err);
+        setErrJustif("No se pudieron cargar las justificaciones.");
+        setJustifDb([]);
+      } finally {
+        setLoadingJustif(false);
+      }
+    };
+    loadJustif();
+  }, []);
+
   const updateJustifEstado = (id, estado) =>
     setJfDraft((prev) => ({ ...prev, [id]: estado }));
 
-  const guardarJustificaciones = () => {
-    const merged = (justifDb || []).map((j) =>
-      jfDraft[j.id] !== undefined ? { ...j, estado: jfDraft[j.id] } : j
+  const guardarJustificaciones = async () => {
+    const updates = (justifDb || [])
+      .filter((j) => jfDraft[j.id] !== undefined && jfDraft[j.id] !== j.estado)
+      .map((j) => ({ id: j.id, estado: jfDraft[j.id] }));
+
+    if (updates.length === 0) {
+      alert("No hay cambios para guardar.");
+      return;
+    }
+
+    const result = await savePreceptorJustificacionesEstado(updates);
+    if (!result?.ok) {
+      alert(result?.error || "No se pudieron guardar los cambios.");
+      return;
+    }
+
+    setJustifDb((prev) =>
+      prev.map((j) =>
+        jfDraft[j.id] !== undefined ? { ...j, estado: jfDraft[j.id] } : j
+      )
     );
-    setJustifDb(merged);
-    localStorage.setItem(JUSTI_STORAGE_KEY, JSON.stringify(merged));
     setJfDraft({});
     alert("Cambios guardados.");
   };
 
   const verDocumento = (url) =>
-    url ? window.open(url, "_blank") : alert("No hay documento adjunto.");
+    url ? window.open(url, "_blank", "noopener") : alert("No hay documento adjunto.");
 
   const pendingJustCount = useMemo(() => {
-    const overlay = (justifDb || []).map((j) =>
-      jfDraft[j.id] !== undefined ? { ...j, estado: jfDraft[j.id] } : j
-    );
+    const overlay = (justifDb || []).map((j) => ({
+      ...j,
+      estado: jfDraft[j.id] !== undefined ? jfDraft[j.id] : j.estado,
+    }));
     return overlay.filter((j) => j.estado === "pendiente").length;
   }, [justifDb, jfDraft]);
 
-  // ===== Calendario (SQL) =====
+  // ===== Calendario =====
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
   const [calAnimKey, setCalAnimKey] = useState(0);
+
   const MESES_ES = [
     "Enero",
     "Febrero",
@@ -568,6 +604,7 @@ export default function Preceptor() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
+
   const emptyDraft = useMemo(
     () => ({
       id: null,
@@ -940,28 +977,41 @@ export default function Preceptor() {
               <div className="enroll-header">
                 <h2 className="enroll-title">Clases de hoy</h2>
               </div>
-              <div className="grades-table-wrap">
-                <table className="grades-table w-full">
-                  <thead>
-                    <tr>
-                      <th>Materia</th>
-                      <th>Comisión</th>
-                      <th>Horario</th>
-                      <th>Aula</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {CLASES_DE_HOY.map((c) => (
-                      <tr key={c.id}>
-                        <td>{c.materia}</td>
-                        <td>{c.comision}</td>
-                        <td>{c.horario}</td>
-                        <td>{c.aula}</td>
+
+              {loadingComs ? (
+                <div className="muted">Cargando comisiones...</div>
+              ) : errComs ? (
+                <div className="muted">
+                  No se pudieron cargar las comisiones.
+                </div>
+              ) : clasesDeHoy.length === 0 ? (
+                <div className="muted">
+                  No tenés comisiones asignadas para hoy.
+                </div>
+              ) : (
+                <div className="grades-table-wrap">
+                  <table className="grades-table w-full">
+                    <thead>
+                      <tr>
+                        <th>Materia</th>
+                        <th>Comisión</th>
+                        <th>Horario</th>
+                        <th>Aula</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {clasesDeHoy.map((c) => (
+                        <tr key={c.id}>
+                          <td>{c.materia}</td>
+                          <td>{c.comision}</td>
+                          <td>{c.horario}</td>
+                          <td>{c.aula}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="grid-gap">
@@ -1226,13 +1276,13 @@ export default function Preceptor() {
       .filter((j) => (jfFilter === "todos" ? true : j.estado === jfFilter))
       .filter((j) => {
         if (tokens.length === 0) return true;
-        const a = alumnosById[j.alumnoId] || {};
-        const ape = norm(a.apellido || "");
-        const nom = norm(a.nombre || "");
+        const ape = norm(j.apellido || "");
+        const nom = norm(j.nombre || "");
         const nombreA = `${ape}, ${nom}`;
         const nombreB = `${nom} ${ape}`;
-        const dni = norm(a.dni || "");
-        const comi = norm(`${j.materiaId}_${j.comision}`);
+        const dni = norm(j.dni || "");
+        const comi = norm(j.comisionCodigo || "");
+        const materia = norm(j.materiaNombre || "");
         return tokens.every(
           (t) =>
             nombreA.includes(t) ||
@@ -1240,7 +1290,8 @@ export default function Preceptor() {
             ape.includes(t) ||
             nom.includes(t) ||
             dni.includes(t) ||
-            comi.includes(t)
+            comi.includes(t) ||
+            materia.includes(t)
         );
       })
       .sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -1274,6 +1325,13 @@ export default function Preceptor() {
         </div>
 
         <div className="enroll-card card--pad-lg">
+          {loadingJustif && (
+            <div className="muted mb-8">Cargando justificaciones...</div>
+          )}
+          {errJustif && !loadingJustif && (
+            <div className="muted mb-8">{errJustif}</div>
+          )}
+
           <div className="grades-table-wrap">
             <table className="grades-table w-full">
               <thead>
@@ -1289,15 +1347,15 @@ export default function Preceptor() {
               </thead>
               <tbody>
                 {rows.map((j) => {
-                  const a = alumnosById[j.alumnoId] || {};
-                  const ape = capitalizeWords(a.apellido || "-");
-                  const nom = capitalizeWords(a.nombre || "-");
+                  const ape = capitalizeWords(j.apellido || "-");
+                  const nom = capitalizeWords(j.nombre || "-");
                   const nombre = `${ape}, ${nom}`;
-                  const comi = `${j.materiaId}_${j.comision}`;
+                  const comi = j.comisionCodigo || "-";
+
                   return (
                     <tr key={j.id}>
                       <td>{nombre}</td>
-                      <td>{a.dni || "-"}</td>
+                      <td>{j.dni || "-"}</td>
                       <td>{comi}</td>
                       <td>{j.fecha}</td>
                       <td>
@@ -1329,6 +1387,13 @@ export default function Preceptor() {
                     </tr>
                   );
                 })}
+                {rows.length === 0 && !loadingJustif && !errJustif && (
+                  <tr>
+                    <td colSpan={7} className="muted text-center">
+                      No hay justificaciones para mostrar.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -1504,9 +1569,7 @@ export default function Preceptor() {
                   <label className="form-label">Comisión</label>
                   <select
                     className="grades-input"
-                    value={
-                      draft.comisionId ? String(draft.comisionId) : ""
-                    }
+                    value={draft.comisionId ? String(draft.comisionId) : ""}
                     onChange={(e) =>
                       setDraft({
                         ...draft,
@@ -1601,6 +1664,7 @@ export default function Preceptor() {
     key: "alumno",
     dir: "asc",
   });
+
   const onSort = (key) =>
     setAlSort((s) => ({
       key,
