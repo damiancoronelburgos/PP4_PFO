@@ -1,6 +1,8 @@
-import app from './app.js';
-import { config } from './config/env.js';
+import app from "./app.js";
+import { config } from "./config/env.js";
 
-app.listen(config.port, () => {
-  console.log(`API on :${config.port}`);
+const port = config.port || 3000; // puerto por defecto
+
+app.listen(port, () => {
+  console.log(`API listening on port ${port}`);
 });
