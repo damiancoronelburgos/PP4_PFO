@@ -1,26 +1,28 @@
+// src/pages/Alumnos.jsx
 import React, { useState } from "react";
-// Importaciones de componentes
-import AlumnoSidebar from "../components/AlumnoSidebar"; 
+
+// Componentes
+import AlumnoSidebar from "../components/AlumnoSidebar";
+
+// Vistas administrativas
 import GestionAlumnos from "./administrador/GestionAlumnos";
 import Constancias from "./administrador/Constancias";
-import Notificaciones from "./administrador/Notificaciones";
-import Preceptor from "./Preceptor"; // Usado para el caso "Calendario" si es la vista principal
+import ComuniocacionesAdmin from "./administrador/Comunicaciones";
+import Preceptor from "./Preceptor";
 
-// 🆕 NUEVOS COMPONENTES DE ALUMNO (Asumo rutas en ./alumnos/)
-import Perfil from "./alumnos/Perfil"; 
+// Vistas de alumno
+import Perfil from "./alumnos/Perfil";
 import Inscripcion from "./alumnos/Inscripcion";
-import Asistencias from "./alumnos/Asistencias"; 
+import Asistencias from "./alumnos/Asistencias";
 import Calificaciones from "./alumnos/Calificaciones";
-import Historial from "./alumnos/Historial"; 
-import Contacto from "./alumnos/Contacto"; 
-// Nota: 'Calendario' y 'Notificaciones' ya están importados/definidos (usamos Preceptor y Notificaciones)
-
+import Historial from "./alumnos/Historial";
+import Contacto from "./alumnos/Contacto";
 
 // Estilos
 import "../styles/alumnos.css";
 import "../styles/Administrador.css";
 
-export default function Administrador() {
+export default function Alumnos() {
   const [vistaActual, setVista] = useState("inicio");
 
   const renderVista = () => {
@@ -28,43 +30,71 @@ export default function Administrador() {
       // === Vistas Administrativas ===
       case "alumnos":
         return <GestionAlumnos />;
+
       case "constancias":
         return <Constancias />;
 
-      // === Vistas Compartidas / Alumno ===
       case "notificaciones":
-        return <Notificaciones />; 
-      
-      // Utilizamos el componente principal Preceptor para mostrar la vista de Calendario
-      case "Calendario": 
-        return <Preceptor />; 
+        return <ComuniocacionesAdmin />;
 
-      // === NUEVOS CASES AGREGADOS PARA EL ALUMNO ===
+      // Calendario usando la vista principal de Preceptor
+      case "Calendario":
+        return <Preceptor />;
+
+      // === Vistas de Alumno ===
       case "perfil":
         return <Perfil />;
+
       case "inscripcion":
         return <Inscripcion />;
+
       case "asistencias":
         return <Asistencias />;
+
       case "calificaciones":
-        return <Calificaciones />;
+        return (
+          <Calificaciones
+            setActive={(view) => setVista(view || "inicio")}
+          />
+        );
+
       case "historial":
-        return <Historial />;
+        return (
+          <Historial
+            setActive={(view) => setVista(view || "inicio")}
+            historial={[]}
+            generarPDF={() =>
+              alert(
+                "La descarga del historial en PDF aún no está implementada desde esta vista."
+              )
+            }
+          />
+        );
+
       case "contacto":
-        return <Contacto />;
+        return (
+          <Contacto
+            setActive={(view) => setVista(view || "inicio")}
+          />
+        );
 
       default:
-        return <h3 className="bienvenida">Seleccione una opción del menú</h3>
+        return (
+          <h3 className="bienvenida">
+            Seleccione una opción del menú
+          </h3>
+        );
     }
   };
 
   return (
     <div className="administrador-container" style={{ display: "flex" }}>
-      {/* Sidebar */}
       <AlumnoSidebar setVista={setVista} vistaActual={vistaActual} />
 
-      {/* Contenido */}
-      <div className="administrador-content" style={{ flex: 1, padding: "20px" }}>
+      <div
+        className="administrador-content"
+        style={{ flex: 1, padding: "20px" }}
+      >
         {renderVista()}
       </div>
     </div>

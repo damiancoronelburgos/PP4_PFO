@@ -90,9 +90,11 @@ export default function Calificaciones({ setActive }) {
                 {/* HEADER */}
                 <div className="enroll-header">
                     <h2 className="enroll-title">Calificaciones</h2>
-                    <button className="btn" onClick={() => setActive("perfil")}>
-                        Volver
-                    </button>
+                    {typeof setActive === "function" && (
+                        <button className="btn" onClick={() => setActive("perfil")}>
+                            Volver
+                        </button>
+                    )}
                 </div>
 
                 {/* FILTRO */}

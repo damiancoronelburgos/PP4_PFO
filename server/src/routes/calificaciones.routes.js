@@ -1,85 +1,80 @@
-// src/routes/calificaciones.routes.js
-
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import { auth } from "../middlewares/auth.js"; 
+import prisma from "../db/prisma.js";
+import { auth, allowRoles } from "../middlewares/auth.js";
 
-const prisma = new PrismaClient();
 const r = Router();
+
+// Usamos auth para todas las rutas de este router
+r.use(auth);
 
 /**
  * GET /api/calificaciones/
- * Obtiene las calificaciones del alumno logueado.
+ * Obtiene las calificaciones del alumno logueado (rol alumno).
  */
-r.get("/", auth, async (req, res) => {
-    // Usando req.user?.sub consistentemente para el ID del alumno
-    const alumnoId = req.user?.sub || 1; 
+r.get("/", allowRoles("alumno"), async (req, res) => {
+  try {
+    // 1) Buscar al alumno asociado al usuario logueado
+    const alumno = await prisma.alumnos.findFirst({
+      where: { usuario_id: req.user.sub },
+      select: { id: true },
+    });
 
-    try {
-        const calificaciones = await prisma.calificaciones.findMany({
-            where: {
-                alumno_id: alumnoId,
-            },
-            // ✅ USAMOS SELECT con los nombres de campo EXACTOS de tu schema
-            select: {
-                id: true,
-                estado: true,
-                observacion: true,
-                
-                // ✅ Campos de notas según schema
-                p1: true,         
-                p2: true,
-                p3: true,
-                
-                // Campos de fecha y periodo
-                anio: true,         
-                cuatrimestre: true, 
-
-                // Relación con comisión y materia
-                comision: {
-                    select: {
-                        codigo: true, 
-                        letra: true,
-                        materia: {
-                            select: {
-                                id: true,
-                                nombre: true, 
-                            },
-                        },
-                    },
-                },
-            },
-        });
-
-        // Mapeo para devolver los datos estructurados que espera Calificaciones.jsx
-        const resultadoLimpio = calificaciones.map(c => ({
-            id: c.id,
-            materiaId: c.comision.materia.id,
-            materiaNombre: c.comision.materia.nombre,
-            comisionNombre: `${c.comision.codigo}${c.comision.letra ? ' - ' + c.comision.letra : ''}`,
-            
-            // ✅ Mapeo de notas usando los nombres 'p1', 'p2', 'p3' del modelo
-            parciales: {
-                p1: c.p1,
-                p2: c.p2,
-                p3: c.p3,
-            },
-            
-            estado: c.estado,
-            observacion: c.observacion,
-            anio: c.anio,
-            cuatrimestre: c.cuatrimestre,
-        }));
-        
-        return res.json(resultadoLimpio);
-
-    } catch (error) {
-        console.error("Error al obtener calificaciones:", error);
-        // Sugerencia: Si el error persiste, imprime el error de Prisma aquí para verlo en la consola
-        // console.error(JSON.stringify(error, null, 2));
-        return res.status(500).json({ error: "Error interno del servidor al cargar calificaciones." });
+    if (!alumno) {
+      return res.status(404).json({ error: "Alumno no encontrado" });
     }
-});
 
+    // 2) Traer calificaciones de ese alumno con sus comisiones y materias
+    const rows = await prisma.calificaciones.findMany({
+      where: { alumno_id: alumno.id },
+      include: {
+        // Según tu schema:
+        // calificaciones -> comisiones -> materias
+        comisiones: {
+          include: { materias: true },
+        },
+        docentes: true, // por si lo querés usar después
+      },
+      orderBy: [
+        { anio: "desc" },
+        { cuatrimestre: "desc" },
+        { id: "desc" },
+      ],
+    });
+
+    // 3) Mapear al formato que espera Calificaciones.jsx
+    const resultadoLimpio = rows.map((c) => {
+      const com = c.comisiones;
+      const mat = com?.materias;
+
+      return {
+        id: c.id,
+        materiaId: mat?.id ?? null,
+        materiaNombre: mat?.nombre ?? "Sin materia",
+
+        comisionNombre: com
+          ? `${com.codigo}${com.letra ? " - " + com.letra : ""}`
+          : "-",
+
+        parciales: {
+          p1: c.p1,
+          p2: c.p2,
+          p3: c.p3,
+        },
+
+        estado: c.estado ?? "",
+        observacion: c.observacion ?? "",
+        anio: c.anio ?? null,
+        cuatrimestre: c.cuatrimestre ?? null,
+      };
+    });
+
+    return res.json(resultadoLimpio);
+  } catch (error) {
+    console.error("Error al obtener calificaciones:", error);
+    return res
+      .status(500)
+      .json({ error: "Error interno del servidor al cargar calificaciones." });
+  }
+});
 
 export default r;

@@ -1,6 +1,6 @@
-// src/pages/alumnos/Asistencias.jsx
 import React, { useEffect, useState } from "react";
 import "../../styles/alumnos.css";
+import { apiGet } from "../../lib/api";
 
 export default function Asistencias() {
   const [asistencias, setAsistencias] = useState([]);
@@ -10,17 +10,20 @@ export default function Asistencias() {
   useEffect(() => {
     const fetchAsistencias = async () => {
       try {
-        const res = await fetch("/api/alumnos/me/asistencias");
-        const data = await res.json();
+        const data = await apiGet("/alumnos/me/asistencias");
 
-        // Mapear los datos para que React pueda renderizar correctamente
-        const formateadas = data.map(a => ({
-          id: a.id,
-          fecha: a.fecha,
-          estado: a.estado,
-          materia: a.comision?.materia?.nombre || "-",
-          comision: a.comision?.letra || "-",
-        }));
+        const formateadas = (data || []).map((a) => {
+          const com = a.comisiones || a.comision || {};
+          const mat = com.materias || com.materia || {};
+
+          return {
+            id: a.id,
+            fecha: a.fecha,
+            estado: a.estado,
+            materia: mat.nombre || "-",
+            comision: com.letra || com.codigo || "-",
+          };
+        });
 
         setAsistencias(formateadas);
       } catch (err) {
@@ -49,7 +52,7 @@ export default function Asistencias() {
           </tr>
         </thead>
         <tbody>
-          {asistencias.map(a => (
+          {asistencias.map((a) => (
             <tr key={a.id}>
               <td>{new Date(a.fecha).toLocaleDateString()}</td>
               <td>{a.materia}</td>

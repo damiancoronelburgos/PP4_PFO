@@ -1,11 +1,8 @@
 // src/pages/alumnos/Perfil.jsx
 import React, { useState, useEffect, useRef } from "react";
-
 import "../../styles/alumnos.css";
+import { apiGet } from "../../lib/api";
 
-
-
-// Helper para capitalizar
 const cap = (s = "") => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Perfil() {
@@ -17,22 +14,22 @@ export default function Perfil() {
 
   const fileRef = useRef(null);
 
-  // ===============================
-  // Cargar datos del alumno desde API
-  // ===============================
   useEffect(() => {
-    fetch("http://localhost:3000/api/alumnos/me/datos")
-      .then(res => res.json())
-      .then(data => {
+    const loadPerfil = async () => {
+      try {
+        const data = await apiGet("/alumnos/me/datos");
         setAlumno(data);
-        if (data.avatar) setAvatarSrc(data.avatar);
-      })
-      .catch(err => console.error("Error al cargar perfil:", err));
+
+        const avatar = data.avatar_url || data.avatar;
+        if (avatar) setAvatarSrc(avatar);
+      } catch (err) {
+        console.error("Error al cargar perfil:", err);
+      }
+    };
+
+    loadPerfil();
   }, []);
 
-  // ===============================
-  // Handlers
-  // ===============================
   const choosePhoto = () => fileRef.current?.click();
 
   const onPhotoChange = (e) => {
@@ -71,21 +68,32 @@ export default function Perfil() {
       <p className="panel-subtitle">Datos personales del alumno</p>
 
       <div className="perfil-grid">
-        {/* Datos básicos */}
         <div className="perfil-col">
           <h3>Datos del alumno</h3>
-          <p><strong>Nombre:</strong> {cap(alumno.nombre)} {cap(alumno.apellido)}</p>
-          <p><strong>DNI:</strong> {alumno.dni || "—"}</p>
-          <p><strong>Teléfono:</strong> {alumno.telefono || "—"}</p>
-          <p><strong>Email:</strong> {alumno.email || "—"}</p>
+          <p>
+            <strong>Nombre:</strong> {cap(alumno.nombre)}{" "}
+            {cap(alumno.apellido)}
+          </p>
+          <p>
+            <strong>DNI:</strong> {alumno.dni || "—"}
+          </p>
+          <p>
+            <strong>Teléfono:</strong> {alumno.telefono || "—"}
+          </p>
+          <p>
+            <strong>Email:</strong> {alumno.email || "—"}
+          </p>
         </div>
 
-        {/* Avatar */}
         <div className="perfil-col">
           <h3>Foto de perfil</h3>
           <img src={avatarSrc} alt="Avatar" className="perfil-avatar" />
           <div className="perfil-avatar-actions">
-            <button type="button" onClick={choosePhoto} className="btn-secondary">
+            <button
+              type="button"
+              onClick={choosePhoto}
+              className="btn-secondary"
+            >
               Cambiar foto
             </button>
             <input
@@ -96,14 +104,19 @@ export default function Perfil() {
               onChange={onPhotoChange}
             />
           </div>
-          <p className="hint">(* Por ahora solo cambia en pantalla, demo front)</p>
+          <p className="hint">
+            (* Por ahora solo cambia en pantalla, demo front)
+          </p>
         </div>
 
-        {/* Seguridad / Contraseña */}
         <div className="perfil-col">
           <h3>Seguridad</h3>
           {!showPwd && (
-            <button type="button" className="btn-secondary" onClick={() => setShowPwd(true)}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setShowPwd(true)}
+            >
               Cambiar contraseña
             </button>
           )}
@@ -127,8 +140,18 @@ export default function Perfil() {
               </label>
 
               <div className="perfil-pwd-actions">
-                <button type="submit" className="btn-primary">Guardar</button>
-                <button type="button" className="btn-secondary" onClick={() => { setShowPwd(false); setPwd1(""); setPwd2(""); }}>
+                <button type="submit" className="btn-primary">
+                  Guardar
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowPwd(false);
+                    setPwd1("");
+                    setPwd2("");
+                  }}
+                >
                   Cancelar
                 </button>
               </div>
