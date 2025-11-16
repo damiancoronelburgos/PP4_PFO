@@ -55,6 +55,11 @@ export default function Login() {
       localStorage.setItem("role", role);
       localStorage.setItem("displayName", displayName);
 
+      // 🚨 AGREGAR ESTA LÍNEA ES CLAVE
+      if (data.user?.id) { 
+        localStorage.setItem("alumno_id_pk", String(data.user.id));
+      }
+
       setAvatar(ROLE_AVATAR[role] || GENERIC_AVATAR);
       navigate(getRedirectForRole(role), { replace: true });
     } catch (err) {

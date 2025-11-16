@@ -2,8 +2,7 @@ import prisma from "../db/prisma.js";
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
-
-const DEFAULT_AVATAR_URL = "/uploads/avatars/default-avatar.png";
+import { updateUserAvatar, changeUserPassword as changeUserPasswordGeneric } from "../services/userAccount.service.js";
 
 // ===== Helpers generales =====
 
@@ -442,6 +441,10 @@ export async function updatePreceptorNotificacion(req, res, next) {
     const userId = me.usuario_id;
     const id = Number(req.params.id);
 
+    console.log("PATCH /me/notificaciones/:id");
+    console.log("  userId:", userId, "id:", id);
+    console.log("  body recibido:", req.body);
+
     if (!id || Number.isNaN(id)) {
       return res.status(400).json({ error: "ID inválido" });
     }
@@ -449,6 +452,8 @@ export async function updatePreceptorNotificacion(req, res, next) {
     const notif = await prisma.notificaciones.findFirst({
       where: { id, usuario_id: userId },
     });
+
+    console.log("  notif antes:", notif && { id: notif.id, leida: notif.leida, favorito: notif.favorito });
 
     if (!notif) {
       return res.status(404).json({ error: "Notificación no encontrada" });
@@ -462,10 +467,14 @@ export async function updatePreceptorNotificacion(req, res, next) {
       return res.status(400).json({ error: "Nada para actualizar" });
     }
 
+    console.log("  data a actualizar:", data);
+
     const updated = await prisma.notificaciones.update({
       where: { id },
       data,
     });
+
+    console.log("  notif después:", { id: updated.id, leida: updated.leida, favorito: updated.favorito });
 
     const out = {
       id: updated.id,
@@ -482,6 +491,7 @@ export async function updatePreceptorNotificacion(req, res, next) {
 
     res.json(out);
   } catch (err) {
+    console.error("updatePreceptorNotificacion error", err);
     next(err);
   }
 }
@@ -665,115 +675,12 @@ export async function sendPreceptorComunicacion(req, res, next) {
 
 // POST /api/preceptores/me/avatar
 export async function updatePreceptorAvatar(req, res, next) {
-  try {
-    const me = await getPreceptorOr404(req, res);
-    if (!me) return;
-
-    if (!req.file) {
-      return res.status(400).json({ error: "No se recibió ningún archivo." });
-    }
-
-    const newAvatarUrl = `/uploads/avatars/${req.file.filename}`;
-
-    const user = await prisma.usuarios.findUnique({
-      where: { id: me.usuario_id },
-      select: { avatar_url: true },
-    });
-
-    if (user?.avatar_url && user.avatar_url !== DEFAULT_AVATAR_URL) {
-      const oldPath = resolveAvatarDiskPath(user.avatar_url);
-      if (oldPath) {
-        fs.unlink(oldPath, (err) => {
-          if (err) {
-            console.error("Error al borrar avatar anterior:", err.message);
-          }
-        });
-      }
-    }
-
-    const updatedUser = await prisma.usuarios.update({
-      where: { id: me.usuario_id },
-      data: { avatar_url: newAvatarUrl },
-      select: { id: true, username: true, avatar_url: true },
-    });
-
-    res.json({
-      ok: true,
-      avatarUrl: updatedUser.avatar_url || DEFAULT_AVATAR_URL,
-    });
-  } catch (err) {
-    next(err);
-  }
+  return updateUserAvatar(req, res, next);
 }
 
 // POST /api/preceptores/me/password
 export async function changePreceptorPassword(req, res, next) {
-  try {
-    const me = await getPreceptorOr404(req, res);
-    if (!me) return;
-
-    const { currentPassword, newPassword, confirmPassword } = req.body || {};
-
-    const current = String(currentPassword || "");
-    const nueva = String(newPassword || "");
-    const confirm = String(confirmPassword || "");
-
-    if (!current || !nueva || !confirm) {
-      return res
-        .status(400)
-        .json({ error: "Todos los campos son obligatorios." });
-    }
-
-    if (nueva.length < 8) {
-      return res
-        .status(400)
-        .json({ error: "La nueva contraseña debe tener al menos 8 caracteres." });
-    }
-
-    if (nueva !== confirm) {
-      return res
-        .status(400)
-        .json({ error: "La nueva contraseña y la confirmación no coinciden." });
-    }
-
-    const user = await prisma.usuarios.findUnique({
-      where: { id: me.usuario_id },
-      select: { password_hash: true },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuario no encontrado." });
-    }
-
-    const ok = await bcrypt.compare(current, user.password_hash);
-    if (!ok) {
-      return res
-        .status(400)
-        .json({ error: "La contraseña actual no es correcta." });
-    }
-
-    const sameAsOld = await bcrypt.compare(nueva, user.password_hash);
-    if (sameAsOld) {
-      return res
-        .status(400)
-        .json({ error: "La nueva contraseña no puede ser igual a la actual." });
-    }
-
-    const saltRounds = 10;
-    const newHash = await bcrypt.hash(nueva, saltRounds);
-
-    await prisma.usuarios.update({
-      where: { id: me.usuario_id },
-      data: { password_hash: newHash },
-    });
-
-    res.json({
-      ok: true,
-      message: "Contraseña actualizada correctamente.",
-    });
-  } catch (err) {
-    next(err);
-  }
+  return changeUserPasswordGeneric(req, res, next);
 }
 
 // ===== Eventos de calendario =====
