@@ -1,63 +1,72 @@
 import express from "express";
 import morgan from "morgan";
-import cors from "cors"; 
+import cors from "cors";
+import path from "node:path";
 
-
-// 🔹 Importación de Rutas
-
-// 🔑 RUTA PRINCIPAL DE ALUMNOS (Contiene /api/alumnos/perfil, /avatar, etc.)
-import alumnosGestiónRoutes from "./routes/alumnos.routes.js"; 
-
-// 🔑 RUTA DE CALIFICACIONES
-import calificacionesRoutes from "./routes/calificaciones.routes.js"; 
-
-// 🔑 RUTA DE CONTACTO (NUEVA)
-import contactoRoutes from "./routes/contacto.routes.js"; 
-
-// 💡 OTRAS RUTAS
-import authRoutes from "./routes/auth.routes.js"; 
+// 🔹 Rutas principales
+import authRoutes from "./routes/auth.routes.js";
+import alumnosRoutes from "./routes/alumnos.routes.js";
 import docentesRoutes from "./routes/docentes.routes.js";
 import preceptoresRoutes from "./routes/preceptores.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
+// 🔹 Rutas nuevas / específicas
+import ofertaAcademicaRoutes from "./routes/ofertaAcademica.routes.js";
+import constanciasRoutes from "./routes/constancias.routes.js";
+import gestionAlumnosRouter from "./routes/gestionalumnos.routes.js";
+import calificacionesRoutes from "./routes/calificaciones.routes.js";
+import contactoRoutes from "./routes/contacto.routes.js";
 
 const app = express();
 
-// --- Middlewares ---
+// =======================
+//  CORS
+// =======================
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-// 1. CORS
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173', 
+app.use(
+  cors({
+    origin: allowedOrigins,
     credentials: true,
-}));
+  })
+);
 
-// 2. Manejo de JSON
+// =======================
+//  Middlewares básicos
+// =======================
 app.use(express.json());
-
-// 3. Registro de peticiones
 app.use(morgan("dev"));
 
-// 4. Servir archivos estáticos 
-app.use(express.static('public')); 
+// Archivos estáticos generales (por ejemplo, /public/logo.png)
+app.use(express.static("public"));
 
+// Archivos subidos (avatars, etc.)
+app.use("/uploads", express.static(path.resolve("uploads")));
 
-// --- Rutas Base ---
+// =======================
+//  Healthcheck
+// =======================
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true });
+});
 
-// 🔹 Health Check
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
-
-// 🔹 CONEXIÓN DE RUTAS API 
+// =======================
+//  Rutas API
+// =======================
 
 // Autenticación
 app.use("/api/auth", authRoutes);
 
-// Alumnos (Perfil, datos personales, etc.)
-app.use("/api/alumnos", alumnosGestiónRoutes); 
+// Alumnos (me/datos, me/calificaciones, me/asistencias, listado para admin/preceptor, etc.)
+app.use("/api/alumnos", alumnosRoutes);
 
-// Calificaciones (Nueva ruta)
-app.use("/api/calificaciones", calificacionesRoutes); 
+// Calificaciones (rutas específicas que hayas definido en calificaciones.routes.js)
+app.use("/api/calificaciones", calificacionesRoutes);
 
-// 🚨 CONTACTO (Institucional y Docentes)
+// Contacto (institucional / docentes)
 app.use("/api/contacto", contactoRoutes);
 
 // Otros roles
@@ -65,9 +74,20 @@ app.use("/api/docentes", docentesRoutes);
 app.use("/api/preceptores", preceptoresRoutes);
 app.use("/api/admin", adminRoutes);
 
+// Gestión de alumnos (ABM desde panel admin)
+app.use("/api/gestion", gestionAlumnosRouter);
 
-// 🔹 404 API Not Found
-// Asegúrate de que esto siempre esté después de todos los montajes de rutas /api
-app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));
+// Oferta académica (materias + comisiones)
+app.use("/api/ofertaAcademica", ofertaAcademicaRoutes);
+
+// Constancias (historial académico, PDFs, etc.)
+app.use("/api/constancias", constanciasRoutes);
+
+// =======================
+//  404 para /api
+// =======================
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
 
 export default app;

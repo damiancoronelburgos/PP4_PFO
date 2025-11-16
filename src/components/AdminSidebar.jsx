@@ -12,7 +12,7 @@ export default function AdminSidebar({ setVista, vistaActual }) {
     const confirmar = window.confirm("¿Desea cerrar sesión y volver al login?");
     if (confirmar) {
       // Limpiar datos de usuario si fuera necesario
-      navigate("/"); // redirige a la ruta /login
+      navigate("/"); // redirige a la ruta /logi
     }
   };
 

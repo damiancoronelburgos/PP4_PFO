@@ -14,5 +14,7 @@ COPY src ./src
 COPY scripts ./scripts
 COPY .env.example ./.env.example
 
+RUN mkdir -p uploads/avatars
+
 EXPOSE 3000
 CMD ["node", "src/server.js"]
