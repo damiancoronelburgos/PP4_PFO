@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/preceptor.css";
 
-// ===== API SQL (preceptor) =====
+// API SQL (preceptor)
 import {
   fetchPreceptorMe,
   fetchPreceptorComisiones,
@@ -23,7 +23,19 @@ import {
   savePreceptorJustificacionesEstado,
 } from "../lib/preceptor.api";
 
-// ===== Constantes / Utils =====
+// Componentes UI
+import PreceptorSidebar from "../components/PreceptorSidebar";
+import PreceptorInicio from "./preceptor/PreceptorInicio";
+import PreceptorMisComisiones from "./preceptor/PreceptorMisComisiones";
+import PreceptorAsistencia from "./preceptor/PreceptorAsistencia";
+import PreceptorJustificaciones from "./preceptor/PreceptorJustificaciones";
+import PreceptorCalendario from "./preceptor/PreceptorCalendario";
+import PreceptorAlumnos from "./preceptor/PreceptorAlumnos";
+import PreceptorComunicaciones from "./preceptor/PreceptorComunicaciones";
+import PreceptorNotificaciones from "./preceptor/PreceptorNotificaciones";
+import PreceptorPerfil from "./preceptor/PreceptorPerfil";
+
+// Constantes / utils
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString("es-AR", {
     day: "2-digit",
@@ -77,7 +89,7 @@ function parseDiaSemanaFromHorario(horario) {
 export default function Preceptor() {
   const navigate = useNavigate();
 
-  // ===== Sesión / Perfil =====
+  // Sesión / Perfil
   const [displayName, setDisplayName] = useState(() =>
     capitalizeWords(localStorage.getItem("displayName") || "Preceptor/a")
   );
@@ -165,7 +177,7 @@ export default function Preceptor() {
     loadProfile();
   }, []);
 
-  // ===== Cambio de contraseña =====
+  // Cambio de contraseña
   const [showPwd, setShowPwd] = useState(false);
   const [currentPwd, setCurrentPwd] = useState("");
   const [pwd1, setPwd1] = useState("");
@@ -210,7 +222,7 @@ export default function Preceptor() {
     setPwd2("");
   };
 
-  // ===== Comisiones / Métricas alumnos =====
+  // Comisiones / Métricas alumnos
   const [comisionesDb, setComisionesDb] = useState([]);
   const [loadingComs, setLoadingComs] = useState(true);
   const [errComs, setErrComs] = useState(null);
@@ -220,7 +232,7 @@ export default function Preceptor() {
   const [errAlumnos, setErrAlumnos] = useState(null);
 
   const clasesDeHoy = useMemo(() => {
-    const todayDow = new Date().getDay(); // 0=Dom, 1=Lun, etc.
+    const todayDow = new Date().getDay();
     return (comisionesDb || [])
       .filter((c) => {
         const dow = parseDiaSemanaFromHorario(c.horario);
@@ -300,9 +312,8 @@ export default function Preceptor() {
     })();
   }, []);
 
-  // ===== Asistencias =====
+  // Asistencias
   const todayISO = useMemo(() => ymd(new Date()), []);
-
   const [comisionSel, setComisionSel] = useState("");
   const [fechaAsis, setFechaAsis] = useState(todayISO);
   const [fechaOptions, setFechaOptions] = useState([
@@ -429,7 +440,7 @@ export default function Preceptor() {
     }
   };
 
-  // ===== Justificaciones =====
+  // Justificaciones
   const [justifDb, setJustifDb] = useState([]);
   const [loadingJustif, setLoadingJustif] = useState(true);
   const [errJustif, setErrJustif] = useState(null);
@@ -494,7 +505,7 @@ export default function Preceptor() {
     return overlay.filter((j) => j.estado === "pendiente").length;
   }, [justifDb, jfDraft]);
 
-  // ===== Calendario =====
+  // Calendario
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
@@ -732,7 +743,7 @@ export default function Preceptor() {
     setIsModalOpen(false);
   };
 
-  // ===== Comunicaciones =====
+  // Comunicaciones
   const [commsSubject, setCommsSubject] = useState("");
   const [commsComSel, setCommsComSel] = useState("");
   const [commsComs, setCommsComs] = useState([]);
@@ -822,7 +833,7 @@ export default function Preceptor() {
     setCommsComs([]);
   };
 
-  // ===== Notificaciones =====
+  // Notificaciones
   const toIso = (d) =>
     /^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d}T09:00:00` : d;
 
@@ -835,7 +846,7 @@ export default function Preceptor() {
       try {
         const raw = await fetchPreceptorNotificaciones();
         const mapped = (raw || []).map((n) => ({
-          id: n.id,
+          id: Number(n.id),
           titulo: n.titulo,
           texto: n.detalle || "",
           fecha: toIso(n.fecha),
@@ -861,39 +872,58 @@ export default function Preceptor() {
   );
 
   const toggleLeida = async (id) => {
-    let newLeida = false;
+    const idNum = Number(id);
+    const current = notis.find((n) => n.id === idNum);
+    if (!current) return;
+
+    const newLeida = !current.leida;
+
     setNotis((prev) =>
-      prev.map((n) => {
-        if (n.id !== id) return n;
-        newLeida = !n.leida;
-        return { ...n, leida: newLeida };
-      })
+      prev.map((n) =>
+        n.id === idNum ? { ...n, leida: newLeida } : n
+      )
     );
+
     try {
-      await updatePreceptorNotificacion(id, { leida: newLeida });
+      await updatePreceptorNotificacion(idNum, { leida: newLeida });
     } catch (err) {
       console.error("toggleLeida error", err);
+      setNotis((prev) =>
+        prev.map((n) =>
+          n.id === idNum ? { ...n, leida: current.leida } : n
+        )
+      );
     }
   };
 
   const toggleFav = async (id) => {
-    let newFav = false;
+    const idNum = Number(id);
+    const current = notis.find((n) => n.id === idNum);
+    if (!current) return;
+
+    const newFav = !current.fav;
+
     setNotis((prev) =>
-      prev.map((n) => {
-        if (n.id !== id) return n;
-        newFav = !n.fav;
-        return { ...n, fav: newFav };
-      })
+      prev.map((n) =>
+        n.id === idNum ? { ...n, fav: newFav } : n
+      )
     );
+
     try {
-      await updatePreceptorNotificacion(id, { favorito: newFav });
+      await updatePreceptorNotificacion(idNum, { favorito: newFav });
     } catch (err) {
       console.error("toggleFav error", err);
+      setNotis((prev) =>
+        prev.map((n) =>
+          n.id === idNum ? { ...n, fav: current.fav } : n
+        )
+      );
     }
   };
 
   const eliminarNoti = async (id) => {
-    const notif = notis.find((n) => n.id === id);
+    const idNum = Number(id);
+    const notif = notis.find((n) => n.id === idNum);
     if (!notif) return;
 
     const okConfirm = window.confirm(
@@ -902,10 +932,10 @@ export default function Preceptor() {
     if (!okConfirm) return;
 
     const prev = notis;
-    setNotis((p) => p.filter((n) => n.id !== id));
+    setNotis((p) => p.filter((n) => n.id !== idNum));
 
     try {
-      const ok = await deletePreceptorNotificacion(id);
+      const ok = await deletePreceptorNotificacion(idNum);
       if (!ok) {
         alert("No se pudo eliminar la notificación en el servidor.");
         setNotis(prev);
@@ -935,7 +965,7 @@ export default function Preceptor() {
       .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
   }, [notis, notiFilter, notiQuery]);
 
-  // ===== Sidebar =====
+  // Sidebar
   const items = [
     { id: "inicio", label: "Inicio" },
     { id: "mis-comisiones", label: "Mis Comisiones" },
@@ -950,7 +980,6 @@ export default function Preceptor() {
 
   const handleLogout = () => {
     const confirmar = window.confirm("¿Seguro que querés cerrar la sesión?");
-
     if (!confirmar) return;
 
     localStorage.removeItem("token");
@@ -959,710 +988,7 @@ export default function Preceptor() {
     navigate("/", { replace: true });
   };
 
-  // ===== Render: Inicio =====
-  const renderInicio = () => {
-    const hoy = new Date().toLocaleDateString("es-AR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    const pendientes = pendingJustCount;
-
-    return (
-      <>
-        <div className="content">
-          <div className="enroll-header mb-6">
-            <h1 className="enroll-title">Inicio</h1>
-          </div>
-          <div className="meta">Fecha: {hoy}</div>
-        </div>
-
-        <div className="content">
-          <div className="grid-main">
-            <div className="enroll-card">
-              <div className="enroll-header">
-                <h2 className="enroll-title">Clases de hoy</h2>
-              </div>
-
-              {loadingComs ? (
-                <div className="muted">Cargando comisiones...</div>
-              ) : errComs ? (
-                <div className="muted">
-                  No se pudieron cargar las comisiones.
-                </div>
-              ) : clasesDeHoy.length === 0 ? (
-                <div className="muted">
-                  No tenés comisiones asignadas para hoy.
-                </div>
-              ) : (
-                <div className="grades-table-wrap">
-                  <table className="grades-table w-full">
-                    <thead>
-                      <tr>
-                        <th>Materia</th>
-                        <th>Comisión</th>
-                        <th>Horario</th>
-                        <th>Aula</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clasesDeHoy.map((c) => (
-                        <tr key={c.id}>
-                          <td>{c.materia}</td>
-                          <td>{c.comision}</td>
-                          <td>{c.horario}</td>
-                          <td>{c.aula}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="grid-gap">
-              <div className="enroll-card">
-                <div className="enroll-header">
-                  <h3 className="enroll-title">Justificaciones pendientes</h3>
-                </div>
-                <div className="row-center gap-12">
-                  <div className="enroll-col__head minw-60 text-center">
-                    {pendientes}
-                  </div>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => setActive("justificaciones")}
-                  >
-                    Ir a Justificaciones
-                  </button>
-                </div>
-              </div>
-
-              <div className="enroll-card">
-                <div className="enroll-header">
-                  <h3 className="enroll-title">Próximos eventos</h3>
-                </div>
-
-                {proximosEventos.length === 0 ? (
-                  <div className="muted">
-                    <p>No hay eventos en las próximas 3 semanas.</p>
-                  </div>
-                ) : (
-                  <div className="grades-table-wrap">
-                    <table className="grades-table w-full">
-                      <thead>
-                        <tr>
-                          <th>Fecha</th>
-                          <th>Título</th>
-                          <th>Comisión</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {proximosEventos.map((ev) => (
-                          <tr key={`${ev.id ?? ev.fecha}-${ev.titulo}`}>
-                            <td>{fmtFecha(ev.fecha)}</td>
-                            <td>{ev.titulo}</td>
-                            <td>
-                              {ev.comisionCodigo ??
-                                (ev.esInstitucional ? "Institucional" : "-")}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  };
-
-  // ===== Render: Mis Comisiones =====
-  const renderMisComisiones = () => {
-    const rows =
-      comisionesDb && comisionesDb.length > 0
-        ? comisionesDb.map((c) => ({
-            materia: capitalizeWords(c.materia?.nombre ?? "-"),
-            comision: c.comision ?? "-",
-            horario: c.horario ?? "-",
-            sede: capitalizeWords(c.sede ?? "Central"),
-            aula: capitalizeWords(c.aula ?? "A confirmar"),
-            docente: capitalizeWords(c.docente ?? "-"),
-            estado: c.estado ?? "Inscripción",
-          }))
-        : [];
-
-    return (
-      <div className="content">
-        <div className="enroll-header mb-12">
-          <h1 className="enroll-title">Mis Comisiones</h1>
-        </div>
-        <div className="enroll-card card--pad-md">
-          {loadingComs && (
-            <div className="muted">Cargando comisiones...</div>
-          )}
-          {errComs && !loadingComs && (
-            <div className="muted">No se pudieron cargar las comisiones.</div>
-          )}
-
-          <div className="grades-table-wrap">
-            <table className="grades-table w-full">
-              <thead>
-                <tr>
-                  <th>Materia</th>
-                  <th>Comisión</th>
-                  <th>Horario</th>
-                  <th>Sede</th>
-                  <th>Aula</th>
-                  <th>Docente</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i}>
-                    <td>{row.materia}</td>
-                    <td>{row.comision}</td>
-                    <td>{row.horario}</td>
-                    <td>{row.sede}</td>
-                    <td>{row.aula}</td>
-                    <td>{row.docente}</td>
-                    <td>{row.estado}</td>
-                  </tr>
-                ))}
-                {rows.length === 0 && !loadingComs && !errComs && (
-                  <tr>
-                    <td colSpan={7} className="muted text-center">
-                      Sin comisiones asignadas
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="card__footer--right">
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ===== Render: Asistencia =====
-  const renderAsistencia = () => {
-    const hasComisiones = comisionesAsistOptions.length > 0;
-
-    return (
-      <div className="content">
-        <div className="enroll-header mb-6">
-          <h1 className="enroll-title">Asistencia</h1>
-        </div>
-
-        <div className="filters-row">
-          <span className="label">Comisión:</span>
-          <select
-            className="grades-input w-220"
-            value={comisionSel}
-            onChange={(e) => setComisionSel(e.target.value)}
-            disabled={!hasComisiones}
-          >
-            {!hasComisiones && <option value="">Sin comisiones</option>}
-            {comisionesAsistOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          <span className="label ml-18">Fecha:</span>
-          <input
-            type="date"
-            className="grades-input w-220"
-            value={fechaAsis}
-            onChange={(e) => setFechaAsis(e.target.value)}
-            disabled={!hasComisiones}
-          />
-        </div>
-
-        <div className="enroll-card card--pad-lg">
-          {loadingAsistencia && (
-            <div className="muted mb-8">Cargando asistencia...</div>
-          )}
-          {errAsistencia && !loadingAsistencia && (
-            <div className="muted mb-8">{errAsistencia}</div>
-          )}
-
-          <div className="grades-table-wrap">
-            <table className="grades-table w-full">
-              <thead>
-                <tr>
-                  <th>Apellido</th>
-                  <th>Nombre</th>
-                  <th>DNI</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {asistenciaList.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.apellido}</td>
-                    <td>{a.nombre}</td>
-                    <td>{a.dni}</td>
-                    <td>
-                      <select
-                        className="grades-input"
-                        value={a.estado}
-                        onChange={(e) => setEstado(a.id, e.target.value)}
-                      >
-                        <option value=""></option>
-                        <option value="P">P</option>
-                        <option value="A">A</option>
-                        <option value="T">T</option>
-                        <option value="J">J</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-                {asistenciaList.length === 0 && !loadingAsistencia && (
-                  <tr>
-                    <td colSpan={4} className="muted text-center">
-                      No hay alumnos para mostrar.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="card__actions--left">
-            <button
-              className="btn btn--success"
-              onClick={guardarAsistencia}
-              disabled={!hasComisiones}
-            >
-              Guardar
-            </button>
-            <button
-              className="btn"
-              onClick={() => marcarTodos("P")}
-              disabled={!hasComisiones}
-            >
-              Marcar todos con P
-            </button>
-            <button
-              className="btn btn--danger"
-              onClick={limpiarAsistencia}
-              disabled={!hasComisiones}
-            >
-              Limpiar
-            </button>
-          </div>
-
-          <div className="card__footer--right">
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ===== Render: Justificaciones =====
-  const renderJustificaciones = () => {
-    const norm = (s = "") => s.toString().toLowerCase();
-    const tokens = norm(jfQuery).trim().split(" ").filter(Boolean);
-
-    const rows = (justifDb || [])
-      .filter((j) => (jfFilter === "todos" ? true : j.estado === jfFilter))
-      .filter((j) => {
-        if (tokens.length === 0) return true;
-        const ape = norm(j.apellido || "");
-        const nom = norm(j.nombre || "");
-        const nombreA = `${ape}, ${nom}`;
-        const nombreB = `${nom} ${ape}`;
-        const dni = norm(j.dni || "");
-        const comi = norm(j.comisionCodigo || "");
-        const materia = norm(j.materiaNombre || "");
-        return tokens.every(
-          (t) =>
-            nombreA.includes(t) ||
-            nombreB.includes(t) ||
-            ape.includes(t) ||
-            nom.includes(t) ||
-            dni.includes(t) ||
-            comi.includes(t) ||
-            materia.includes(t)
-        );
-      })
-      .sort((a, b) => b.fecha.localeCompare(a.fecha));
-
-    return (
-      <div className="content">
-        <div className="enroll-header mb-12">
-          <h1 className="enroll-title">Justificaciones</h1>
-        </div>
-
-        <div className="filters-row">
-          <span className="label">Filtro</span>
-          <select
-            className="grades-input"
-            value={jfFilter}
-            onChange={(e) => setJfFilter(e.target.value)}
-          >
-            <option value="pendiente">Pendientes</option>
-            <option value="aprobada">Aprobadas</option>
-            <option value="rechazada">Rechazadas</option>
-            <option value="todos">Todos</option>
-          </select>
-
-          <span className="label ml-24">Buscar:</span>
-          <input
-            className="grades-input w-280"
-            placeholder="Nombre, DNI o Comisión"
-            value={jfQuery}
-            onChange={(e) => setJfQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="enroll-card card--pad-lg">
-          {loadingJustif && (
-            <div className="muted mb-8">Cargando justificaciones...</div>
-          )}
-          {errJustif && !loadingJustif && (
-            <div className="muted mb-8">{errJustif}</div>
-          )}
-
-          <div className="grades-table-wrap">
-            <table className="grades-table w-full">
-              <thead>
-                <tr>
-                  <th>Apellido y Nombre</th>
-                  <th>DNI</th>
-                  <th>Comisión</th>
-                  <th>Fecha</th>
-                  <th>Estado</th>
-                  <th>Motivo</th>
-                  <th>Documento</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((j) => {
-                  const ape = capitalizeWords(j.apellido || "-");
-                  const nom = capitalizeWords(j.nombre || "-");
-                  const nombre = `${ape}, ${nom}`;
-                  const comi = j.comisionCodigo || "-";
-
-                  return (
-                    <tr key={j.id}>
-                      <td>{nombre}</td>
-                      <td>{j.dni || "-"}</td>
-                      <td>{comi}</td>
-                      <td>{j.fecha}</td>
-                      <td>
-                        <select
-                          className="grades-input"
-                          value={
-                            jfDraft[j.id] !== undefined
-                              ? jfDraft[j.id]
-                              : j.estado
-                          }
-                          onChange={(e) =>
-                            updateJustifEstado(j.id, e.target.value)
-                          }
-                        >
-                          <option value="pendiente">Pendiente</option>
-                          <option value="aprobada">Aprobada</option>
-                          <option value="rechazada">Rechazada</option>
-                        </select>
-                      </td>
-                      <td>{j.motivo || "-"}</td>
-                      <td>
-                        <button
-                          className="btn"
-                          onClick={() => verDocumento(j.documentoUrl)}
-                        >
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {rows.length === 0 && !loadingJustif && !errJustif && (
-                  <tr>
-                    <td colSpan={7} className="muted text-center">
-                      No hay justificaciones para mostrar.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="card__actions--center">
-            <button
-              className="btn btn--success"
-              onClick={guardarJustificaciones}
-            >
-              Guardar
-            </button>
-            <div className="spacer-12" />
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ===== Render: Calendario =====
-  const renderCalendario = () => {
-    const colorFromCommission = (com) => {
-      if (!com) return "#555";
-      let h = 0;
-      for (let i = 0; i < com.length; i++) {
-        h = (h << 5) - h + com.charCodeAt(i);
-      }
-      return `hsl(${Math.abs(h) % 360}, 70%, 42%)`;
-    };
-
-    return (
-      <div className="content">
-        <div className="enroll-card card--pad-sm">
-          <div className="header-row">
-            <h2 className="enroll-title m-0">Calendario</h2>
-            <div className="row-center gap-12 label">
-              <span>Ciclo lectivo:</span>
-              <select
-                className="grades-input"
-                value={calYear}
-                onChange={(e) => {
-                  setCalYear(Number(e.target.value));
-                  setCalAnimKey((k) => k + 1);
-                }}
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <span>Mes:</span>
-              <select
-                className="grades-input"
-                value={calMonth}
-                onChange={(e) => {
-                  setCalMonth(Number(e.target.value));
-                  setCalAnimKey((k) => k + 1);
-                }}
-              >
-                {MESES_ES.map((m, i) => (
-                  <option key={m} value={i}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {loadingEventos && (
-            <div className="muted mb-8">Cargando eventos...</div>
-          )}
-          {errEventos && !loadingEventos && (
-            <div className="muted mb-8">{errEventos}</div>
-          )}
-
-          <div className="calendar__dow">
-            {DOW_ES.map((d) => (
-              <div key={d} className="calendar__dow-item">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="calendar__grid cal-anim" key={calAnimKey}>
-            {cells.map((day, idx) => {
-              if (day === null)
-                return (
-                  <div
-                    key={`b-${idx}`}
-                    className="calendar__cell calendar__cell--empty"
-                  />
-                );
-              const dateISO = `${calYear}-${pad2(calMonth + 1)}-${pad2(day)}`;
-              const dayEvents = eventosPorDia.get(day) || [];
-              return (
-                <div
-                  key={`d-${day}`}
-                  className="calendar__cell calendar__cell--clickable"
-                  onClick={() =>
-                    hasComisionesForEvents ? openAddModal(dateISO) : null
-                  }
-                  title={
-                    hasComisionesForEvents
-                      ? "Click para agregar evento"
-                      : "No hay comisiones para agregar eventos"
-                  }
-                >
-                  <div className="calendar__day">{day}</div>
-                  <div className="calendar__events">
-                    {dayEvents.map((ev, i) => (
-                      <div
-                        key={`${ev.id ?? "r"}-${i}`}
-                        className="calendar__pill calendar__pill--clickable"
-                        style={{
-                          background: colorFromCommission(ev.comisionCodigo),
-                        }}
-                        title={`${ev.titulo} — ${
-                          ev.comisionCodigo || "Institucional"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(ev);
-                        }}
-                      >
-                        <div className="calendar__pill-title">
-                          {ev.titulo}
-                        </div>
-                        <div className="calendar__pill-sub">
-                          {ev.comisionCodigo || "Institucional"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {isModalOpen && (
-            <div
-              className="modal-backdrop"
-              onClick={() => setIsModalOpen(false)}
-            >
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <h3 className="modal-title">
-                  {modalMode === "add"
-                    ? "Agregar evento"
-                    : modalMode === "edit"
-                    ? "Detalle de evento de comisión"
-                    : "Detalle de evento institucional"}
-                </h3>
-
-                <div className="form-row">
-                  <label className="form-label">Fecha</label>
-                  <input
-                    type="date"
-                    className="grades-input"
-                    value={draft.fecha}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        fecha: e.target.value,
-                      })
-                    }
-                    disabled={modalMode !== "add"}
-                  />
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">Comisión</label>
-                  <select
-                    className="grades-input"
-                    value={draft.comisionId ? String(draft.comisionId) : ""}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        comisionId: e.target.value
-                          ? Number(e.target.value)
-                          : "",
-                      })
-                    }
-                    disabled={modalMode !== "add"}
-                  >
-                    <option value="">— seleccionar —</option>
-                    {comisionesCalOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">Título</label>
-                  <input
-                    className="grades-input w-280"
-                    placeholder="Título del evento"
-                    value={draft.titulo}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        titulo: e.target.value,
-                      })
-                    }
-                    disabled={modalMode !== "add"}
-                  />
-                </div>
-
-                <div className="modal-actions">
-                  <button className="btn" onClick={() => setIsModalOpen(false)}>
-                    Cerrar
-                  </button>
-
-                  {modalMode !== "add" && !draft.esInstitucional && (
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={handleAddAnother}
-                    >
-                      Agregar otro evento en este día
-                    </button>
-                  )}
-
-                  {modalMode === "edit" && !draft.esInstitucional && (
-                    <button className="btn btn--danger" onClick={deleteDraft}>
-                      Eliminar
-                    </button>
-                  )}
-                  {modalMode === "add" && (
-                    <button className="btn btn--success" onClick={saveDraft}>
-                      Agregar
-                    </button>
-                  )}
-                </div>
-
-                {modalMode === "view" && (
-                  <p className="muted mt-16">
-                    Evento institucional (no editable).
-                  </p>
-                )}
-                {modalMode === "edit" && (
-                  <p className="muted mt-16">
-                    Evento de comisión (solo se puede eliminar, no editar).
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="card__footer--right">
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ===== Render: Alumnos =====
+  // Estado específico de Alumnos que se usa en el panel
   const [alumnosQuery, setAlumnosQuery] = useState("");
   const [groupBy, setGroupBy] = useState("alumno");
   const [comiFilter, setComiFilter] = useState("todas");
@@ -1671,703 +997,210 @@ export default function Preceptor() {
     dir: "asc",
   });
 
-  const onSort = (key) =>
-    setAlSort((s) => ({
-      key,
-      dir: s.key === key && s.dir === "asc" ? "desc" : "asc",
-    }));
-
-  const renderAlumnos = () => {
-    if (loadingAlumnos) {
-      return (
-        <div className="content">
-          <div className="enroll-header mb-12">
-            <h1 className="enroll-title">Alumnos</h1>
-          </div>
-          <div className="enroll-card card--pad-md">
-            <div className="muted">Cargando métricas de alumnos...</div>
-          </div>
-        </div>
-      );
-    }
-
-    if (errAlumnos) {
-      return (
-        <div className="content">
-          <div className="enroll-header mb-12">
-            <h1 className="enroll-title">Alumnos</h1>
-          </div>
-          <div className="enroll-card card--pad-md">
-            <div className="muted">
-              No se pudieron cargar las métricas de alumnos.
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const baseRowsByComision = alumnosMetrics.map((r) => {
-      const presentes = Number(r.presentes) || 0;
-      const totalClases = Number(r.totalClases) || 0;
-      const tardes = Number(r.tardes) || 0;
-      const justificaciones = Number(r.justificaciones) || 0;
-
-      const pct =
-        totalClases > 0 ? Math.round((presentes / totalClases) * 100) : 0;
-
-      return {
-        id: `${r.alumnoId}-${r.comisionId}`,
-        alumnoId: r.alumnoId,
-        alumno: capitalizeWords(r.alumno),
-        comision: r.comisionCodigo || "-",
-        pct,
-        tardes,
-        just: justificaciones,
-        email: r.email || "-",
-        presentes,
-        totalClases,
-      };
-    });
-
-    const q = alumnosQuery.trim().toLowerCase();
-
-    const filteredByComision =
-      comiFilter === "todas"
-        ? baseRowsByComision
-        : baseRowsByComision.filter((r) => r.comision === comiFilter);
-
-    const buildRowsByAlumno = () => {
-      const acc = new Map();
-      for (const row of filteredByComision) {
-        const key = row.alumnoId;
-        if (!acc.has(key)) {
-          acc.set(key, {
-            id: String(row.alumnoId),
-            alumnoId: row.alumnoId,
-            alumno: row.alumno,
-            comisiones: new Set(),
-            presentes: 0,
-            totalClases: 0,
-            tardes: 0,
-            just: 0,
-            email: row.email,
-          });
-        }
-        const slot = acc.get(key);
-        slot.comisiones.add(row.comision);
-        slot.presentes += row.presentes;
-        slot.totalClases += row.totalClases;
-        slot.tardes += row.tardes;
-        slot.just += row.just;
-      }
-
-      const rows = [];
-      for (const slot of acc.values()) {
-        const pct =
-          slot.totalClases > 0
-            ? Math.round((slot.presentes / slot.totalClases) * 100)
-            : 0;
-        rows.push({
-          id: slot.id,
-          alumnoId: slot.alumnoId,
-          alumno: slot.alumno,
-          comision: Array.from(slot.comisiones).sort().join(", "),
-          pct,
-          tardes: slot.tardes,
-          just: slot.just,
-          email: slot.email,
-        });
-      }
-      return rows;
-    };
-
-    const dataset =
-      groupBy === "alumno"
-        ? buildRowsByAlumno()
-        : filteredByComision.map((r) => ({
-            id: r.id,
-            alumnoId: r.alumnoId,
-            alumno: r.alumno,
-            comision: r.comision,
-            pct: r.pct,
-            tardes: r.tardes,
-            just: r.just,
-            email: r.email,
-          }));
-
-    const visiblesUnsorted = dataset.filter(
-      (f) =>
-        !q ||
-        f.alumno.toLowerCase().includes(q) ||
-        f.comision.toLowerCase().includes(q) ||
-        f.email.toLowerCase().includes(q)
-    );
-
-    const compareValues = (a, b, key) => {
-      if (["pct", "tardes", "just"].includes(key)) {
-        return (Number(a[key]) || 0) - (Number(b[key]) || 0);
-      }
-      return String(a[key] ?? "").localeCompare(String(b[key] ?? ""), "es", {
-        sensitivity: "base",
-      });
-    };
-
-    const visibles = [...visiblesUnsorted].sort((a, b) => {
-      const r = compareValues(a, b, alSort.key);
-      return alSort.dir === "asc" ? r : -r;
-    });
-
-    const colComLabel = groupBy === "alumno" ? "Comisiones" : "Comisión";
-    const arrow = (key) =>
-      alSort.key === key ? (alSort.dir === "asc" ? " ▲" : " ▼") : "";
-
-    return (
-      <div className="content">
-        <div className="enroll-header header-row">
-          <h1 className="enroll-title m-0">Alumnos</h1>
-
-          <div className="row-center gap-10">
-            <select
-              className="grades-input"
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value)}
-              title="Agrupar"
-            >
-              <option value="alumno">Agrupar: Alumno</option>
-              <option value="alumno-comision">Agrupar: Alumno + Comisión</option>
-            </select>
-
-            <select
-              className="grades-input"
-              value={comiFilter}
-              onChange={(e) => setComiFilter(e.target.value)}
-              title="Filtrar comisión"
-            >
-              <option value="todas">Todas las comisiones</option>
-              {comisionesDbOptions.map((cod) => (
-                <option key={cod} value={cod}>
-                  {cod}
-                </option>
-              ))}
-            </select>
-
-            <input
-              className="grades-input w-260"
-              placeholder="Buscar alumno, comisión o correo"
-              value={alumnosQuery}
-              onChange={(e) => setAlumnosQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="enroll-card card--pad-md">
-          <div className="grades-table-wrap table-scroll">
-            <table className="grades-table w-full">
-              <thead>
-                <tr>
-                  <th
-                    className="th-clickable"
-                    onClick={() => onSort("alumno")}
-                    aria-sort={
-                      alSort.key === "alumno"
-                        ? alSort.dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    Alumno{arrow("alumno")}
-                  </th>
-                  <th
-                    className="th-clickable"
-                    onClick={() => onSort("comision")}
-                    aria-sort={
-                      alSort.key === "comision"
-                        ? alSort.dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    {colComLabel}
-                    {arrow("comision")}
-                  </th>
-                  <th
-                    className="th-clickable"
-                    onClick={() => onSort("pct")}
-                    aria-sort={
-                      alSort.key === "pct"
-                        ? alSort.dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    % Asistencia{arrow("pct")}
-                  </th>
-                  <th
-                    className="th-clickable"
-                    onClick={() => onSort("tardes")}
-                    aria-sort={
-                      alSort.key === "tardes"
-                        ? alSort.dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    Tardes{arrow("tardes")}
-                  </th>
-                  <th
-                    className="th-clickable"
-                    onClick={() => onSort("just")}
-                    aria-sort={
-                      alSort.key === "just"
-                        ? alSort.dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    Justificaciones{arrow("just")}
-                  </th>
-                  <th
-                    className="th-clickable"
-                    onClick={() => onSort("email")}
-                    aria-sort={
-                      alSort.key === "email"
-                        ? alSort.dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    Correo{arrow("email")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibles.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.alumno}</td>
-                    <td>{row.comision}</td>
-                    <td>{row.pct}%</td>
-                    <td>{row.tardes}</td>
-                    <td>{row.just}</td>
-                    <td>{row.email}</td>
-                  </tr>
-                ))}
-                {visibles.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="muted text-center">
-                      Sin resultados
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="card__footer--right">
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ===== Render: Comunicaciones =====
-  const renderComunicaciones = () => (
-    <div className="content">
-      <div className="enroll-header mb-6">
-        <h1 className="enroll-title">Emitir Comunicado</h1>
-      </div>
-
-      <div className="enroll-card card--pad-md">
-        <div className="comms-legend">
-          <strong>Elegir Destinatario/s</strong>
-          <span className="comms-help">
-            (podés filtrar por comisión y agregar correos manualmente)
-          </span>
-        </div>
-
-        <div className="form-row">
-          <label className="form-label">Comisión:</label>
-          <div className="comms-combo">
-            <select
-              className="grades-input"
-              value={commsComSel}
-              onChange={(e) => addComision(e.target.value)}
-            >
-              <option value="">— seleccionar —</option>
-              {comisionesFiltradas.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <div className="chips">
-              {commsComs.map((id) => (
-                <span
-                  key={id}
-                  className="chip"
-                  title="Quitar"
-                  onClick={() => removeComision(id)}
-                >
-                  {labelComision(id)} <b>×</b>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <label className="form-label">Otros:</label>
-          <input
-            className="grades-input w-full"
-            placeholder="Correos separados por coma, espacio o ;"
-            value={commsOtros}
-            onChange={(e) => setCommsOtros(e.target.value)}
-          />
-        </div>
-
-        <div className="form-row">
-          <label className="form-label">Asunto:</label>
-          <input
-            className="grades-input w-full"
-            placeholder="Asunto del comunicado"
-            value={commsSubject}
-            onChange={(e) => setCommsSubject(e.target.value)}
-          />
-        </div>
-
-        <div className="comms-msg">
-          <div className="comms-msg__head">
-            <div className="comms-msg__title">Escribe tu mensaje aquí:</div>
-            <button
-              className="btn btn-primary"
-              onClick={enviarComunicado}
-              disabled={sendingComms}
-            >
-              {sendingComms ? "Enviando..." : "Enviar"}
-            </button>
-          </div>
-          <textarea
-            className="comms-textarea"
-            maxLength={COMMS_MAX}
-            value={commsMsg}
-            onChange={(e) => setCommsMsg(e.target.value)}
-            placeholder="Mensaje para los destinatarios..."
-          />
-          <div className="comms-meta">
-            {commsComs.length} comisión
-            {commsComs.length === 1 ? "" : "es"} seleccionada{" · "}
-            {recipients.length} correo
-            {recipients.length === 1 ? "" : "s"} manual{" · "}
-            {commsMsg.length}/{COMMS_MAX}
-          </div>
-        </div>
-
-        <div className="card__footer--right">
-          <button className="btn" onClick={() => setActive(null)}>
-            Volver
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ===== Render: Notificaciones =====
-  const renderNotificaciones = () => (
-    <div className="notes-wrap">
-      <div className="notes-card">
-        <div className="notes-header">
-          <h1 className="notes-title">Notificaciones</h1>
-          <div className="notes-toolbar">
-            <div className="pill-group" role="tablist" aria-label="Filtro">
-              <button
-                className={
-                  "pill" + (notiFilter === "todas" ? " is-active" : "")
-                }
-                onClick={() => setNotiFilter("todas")}
-              >
-                Todos
-              </button>
-              <button
-                className={
-                  "pill" + (notiFilter === "favoritas" ? " is-active" : "")
-                }
-                onClick={() => setNotiFilter("favoritas")}
-              >
-                ★ Favoritos
-              </button>
-              <button
-                className={
-                  "pill" + (notiFilter === "no-leidas" ? " is-active" : "")
-                }
-                onClick={() => setNotiFilter("no-leidas")}
-              >
-                No leídas
-              </button>
-            </div>
-            <div className="badge badge--alert" title="Sin leer">
-              <span className="badge-dot" /> {unreadCount} sin leer
-            </div>
-            <button className="note-btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
-          </div>
-        </div>
-
-        <div className="notes-search">
-          <span className="notes-label">Filtrar:</span>
-          <input
-            className="notes-input"
-            placeholder="Ej: Matemáticas, inscripción, 01/2025..."
-            value={notiQuery}
-            onChange={(e) => setNotiQuery(e.target.value)}
-          />
-        </div>
-
-        <div>
-          {notisVisibles.map((n) => (
-            <div
-              key={n.id}
-              className={"note-item" + (n.leida ? "" : " unread")}
-            >
-              <div className="note-head">
-                <button
-                  className="note-fav-btn"
-                  title={
-                    n.fav ? "Quitar de favoritos" : "Marcar como favorito"
-                  }
-                  onClick={() => toggleFav(n.id)}
-                >
-                  {n.fav ? "★" : "☆"}
-                </button>
-                <h3 className="note-title">{n.titulo}</h3>
-                <div className="note-date">{fmtFechaHora(n.fecha)}</div>
-                <div className="note-actions">
-                  {n.link && (
-                    <button
-                      className="note-btn"
-                      onClick={() => window.open(n.link, "_blank")}
-                    >
-                      Ver
-                    </button>
-                  )}
-                  <button
-                    className="note-btn"
-                    title={
-                      n.leida ? "Marcar como no leída" : "Marcar como leída"
-                    }
-                    onClick={() => toggleLeida(n.id)}
-                  >
-                    {n.leida ? "Marcar no leída" : "Marcar leída"}
-                  </button>
-                  <button
-                    className="note-btn danger"
-                    onClick={() => eliminarNoti(n.id)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-              {n.texto && <div className="note-detail">{n.texto}</div>}
-            </div>
-          ))}
-
-          {notisVisibles.length === 0 && (
-            <div className="note-item">
-              <div className="note-detail">
-                No hay notificaciones para mostrar.
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  // ===== Render: Perfil =====
-  const renderPerfil = () => (
-    <div className="content">
-      <div className="enroll-header mb-12">
-        <h1 className="enroll-title">Mi Perfil</h1>
-      </div>
-      <div className="enroll-card card--pad-lg profile-card">
-        <div className="profile-grid">
-          <div className="profile-col profile-col--avatar">
-            <img src={avatar} alt={displayName} className="profile-avatar-lg" />
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={onPhotoChange}
-              hidden
-            />
-            <button className="btn btn--success" onClick={choosePhoto}>
-              Cambiar foto de perfil
-            </button>
-          </div>
-
-          <div className="profile-col profile-col--info">
-            <h2 className="profile-name">{displayName}</h2>
-            <div className="profile-email">{email}</div>
-            {!showPwd ? (
-              <div className="mt-16">
-                <button
-                  className="btn btn--danger"
-                  onClick={() => setShowPwd(true)}
-                >
-                  Cambiar contraseña
-                </button>
-              </div>
-            ) : (
-              <form className="pwd-form" onSubmit={savePassword}>
-                <input
-                  type="password"
-                  className="grades-input"
-                  placeholder="Contraseña actual"
-                  value={currentPwd}
-                  onChange={(e) => setCurrentPwd(e.target.value)}
-                />
-                <input
-                  type="password"
-                  className="grades-input"
-                  placeholder="Nueva contraseña"
-                  value={pwd1}
-                  onChange={(e) => setPwd1(e.target.value)}
-                />
-                <input
-                  type="password"
-                  className="grades-input"
-                  placeholder="Repetir nueva contraseña"
-                  value={pwd2}
-                  onChange={(e) => setPwd2(e.target.value)}
-                />
-                <div className="row gap-12">
-                  <button
-                    className="btn btn--success"
-                    type="submit"
-                    disabled={pwdLoading}
-                  >
-                    {pwdLoading ? "Guardando..." : "Guardar"}
-                  </button>
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => {
-                      setShowPwd(false);
-                      setCurrentPwd("");
-                      setPwd1("");
-                      setPwd2("");
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-
-          <div className="profile-col profile-col--roles">
-            <h3 className="profile-subtitle">Roles:</h3>
-            <ul className="profile-roles">
-              {roles.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div className="card__footer--right">
-          <button className="btn" onClick={() => setActive(null)}>
-            Volver
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ===== Switch de paneles =====
+  // Switch de paneles
   const renderPanel = () => {
     switch (active) {
       case null:
       case "inicio":
-        return renderInicio();
+        return (
+          <PreceptorInicio
+            loadingComs={loadingComs}
+            errComs={errComs}
+            clasesDeHoy={clasesDeHoy}
+            pendingJustCount={pendingJustCount}
+            proximosEventos={proximosEventos}
+            fmtFecha={fmtFecha}
+            onIrJustificaciones={() => setActive("justificaciones")}
+          />
+        );
       case "mis-comisiones":
-        return renderMisComisiones();
+        return (
+          <PreceptorMisComisiones
+            comisionesDb={comisionesDb}
+            loadingComs={loadingComs}
+            errComs={errComs}
+            capitalizeWords={capitalizeWords}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "asistencia":
-        return renderAsistencia();
+        return (
+          <PreceptorAsistencia
+            comisionesAsistOptions={comisionesAsistOptions}
+            comisionSel={comisionSel}
+            setComisionSel={setComisionSel}
+            fechaAsis={fechaAsis}
+            setFechaAsis={setFechaAsis}
+            asistenciaList={asistenciaList}
+            loadingAsistencia={loadingAsistencia}
+            errAsistencia={errAsistencia}
+            setEstado={setEstado}
+            marcarTodos={marcarTodos}
+            limpiarAsistencia={limpiarAsistencia}
+            guardarAsistencia={guardarAsistencia}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "justificaciones":
-        return renderJustificaciones();
+        return (
+          <PreceptorJustificaciones
+            justifDb={justifDb}
+            loadingJustif={loadingJustif}
+            errJustif={errJustif}
+            jfFilter={jfFilter}
+            setJfFilter={setJfFilter}
+            jfQuery={jfQuery}
+            setJfQuery={setJfQuery}
+            jfDraft={jfDraft}
+            updateJustifEstado={updateJustifEstado}
+            guardarJustificaciones={guardarJustificaciones}
+            verDocumento={verDocumento}
+            capitalizeWords={capitalizeWords}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "calendario":
-        return renderCalendario();
+        return (
+          <PreceptorCalendario
+            calYear={calYear}
+            setCalYear={setCalYear}
+            years={years}
+            calMonth={calMonth}
+            setCalMonth={setCalMonth}
+            MESES_ES={MESES_ES}
+            DOW_ES={DOW_ES}
+            loadingEventos={loadingEventos}
+            errEventos={errEventos}
+            cells={cells}
+            calAnimKey={calAnimKey}
+            setCalAnimKey={setCalAnimKey}
+            eventosPorDia={eventosPorDia}
+            hasComisionesForEvents={hasComisionesForEvents}
+            openAddModal={openAddModal}
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+            modalMode={modalMode}
+            draft={draft}
+            setDraft={setDraft}
+            comisionesCalOptions={comisionesCalOptions}
+            handleAddAnother={handleAddAnother}
+            deleteDraft={deleteDraft}
+            saveDraft={saveDraft}
+            openEditModal={openEditModal}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "alumnos":
-        return renderAlumnos();
+        return (
+          <PreceptorAlumnos
+            loadingAlumnos={loadingAlumnos}
+            errAlumnos={errAlumnos}
+            alumnosMetrics={alumnosMetrics}
+            comisionesDbOptions={comisionesDbOptions}
+            alumnosQuery={alumnosQuery}
+            setAlumnosQuery={setAlumnosQuery}
+            groupBy={groupBy}
+            setGroupBy={setGroupBy}
+            comiFilter={comiFilter}
+            setComiFilter={setComiFilter}
+            alSort={alSort}
+            setAlSort={setAlSort}
+            capitalizeWords={capitalizeWords}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "comunicaciones":
-        return renderComunicaciones();
+        return (
+          <PreceptorComunicaciones
+            comisionesFiltradas={comisionesFiltradas}
+            commsComSel={commsComSel}
+            addComision={addComision}
+            commsComs={commsComs}
+            removeComision={removeComision}
+            labelComision={labelComision}
+            commsOtros={commsOtros}
+            setCommsOtros={setCommsOtros}
+            commsSubject={commsSubject}
+            setCommsSubject={setCommsSubject}
+            commsMsg={commsMsg}
+            setCommsMsg={setCommsMsg}
+            COMMS_MAX={COMMS_MAX}
+            sendingComms={sendingComms}
+            enviarComunicado={enviarComunicado}
+            recipients={recipients}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "notificaciones":
-        return renderNotificaciones();
+        return (
+          <PreceptorNotificaciones
+            notisVisibles={notisVisibles}
+            notiFilter={notiFilter}
+            setNotiFilter={setNotiFilter}
+            unreadCount={unreadCount}
+            notiQuery={notiQuery}
+            setNotiQuery={setNotiQuery}
+            toggleFav={toggleFav}
+            fmtFechaHora={fmtFechaHora}
+            toggleLeida={toggleLeida}
+            eliminarNoti={eliminarNoti}
+            onVolver={() => setActive(null)}
+          />
+        );
       case "perfil":
-        return renderPerfil();
+        return (
+          <PreceptorPerfil
+            avatar={avatar}
+            displayName={displayName}
+            email={email}
+            roles={roles}
+            fileRef={fileRef}
+            onPhotoChange={onPhotoChange}
+            choosePhoto={choosePhoto}
+            showPwd={showPwd}
+            setShowPwd={setShowPwd}
+            currentPwd={currentPwd}
+            setCurrentPwd={setCurrentPwd}
+            pwd1={pwd1}
+            setPwd1={setPwd1}
+            pwd2={pwd2}
+            setPwd2={setPwd2}
+            pwdLoading={pwdLoading}
+            savePassword={savePassword}
+            onVolver={() => setActive(null)}
+          />
+        );
       default:
-        return renderInicio();
+        return (
+          <PreceptorInicio
+            loadingComs={loadingComs}
+            errComs={errComs}
+            clasesDeHoy={clasesDeHoy}
+            pendingJustCount={pendingJustCount}
+            proximosEventos={proximosEventos}
+            fmtFecha={fmtFecha}
+            onIrJustificaciones={() => setActive("justificaciones")}
+          />
+        );
     }
   };
 
-  // ===== UI =====
   return (
     <div className="preceptor-page">
       <div className="full-bg">
         <img src="/prisma.png" className="bg-img" alt="Fondo" />
       </div>
 
-      <aside className="sidebar">
-        <div className="sidebar__inner">
-          <div className="sb-profile">
-            <img src={avatar} alt={displayName} className="sb-avatar" />
-            <p className="sb-role">Preceptor/a</p>
-            <p className="sb-name">{displayName}</p>
-          </div>
-
-          <div className="sb-menu">
-            {items.map((it) => {
-              const isInicio = it.id === "inicio";
-              const isActive = isInicio
-                ? active === null || active === "inicio"
-                : active === it.id;
-              return (
-                <button
-                  key={it.id}
-                  type="button"
-                  onClick={() => setActive(isInicio ? null : it.id)}
-                  className={"sb-item" + (isActive ? " is-active" : "")}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <span className="sb-item__icon" />
-                  <span className="sb-item__text">{it.label}</span>
-                  {it.id === "notificaciones" && unreadCount > 0 && (
-                    <span className="sb-badge">{unreadCount}</span>
-                  )}
-                  {it.id === "justificaciones" && pendingJustCount > 0 && (
-                    <span className="sb-badge">{pendingJustCount}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="sb-footer">
-            <button className="btn btn-secondary" onClick={handleLogout}>
-              Salir ✕
-            </button>
-          </div>
-        </div>
-      </aside>
+      <PreceptorSidebar
+        avatar={avatar}
+        displayName={displayName}
+        items={items}
+        active={active}
+        unreadCount={unreadCount}
+        pendingJustCount={pendingJustCount}
+        onChangeSection={(sectionId) => setActive(sectionId)}
+        onLogout={handleLogout}
+      />
 
       <div className="brand brand--click" onClick={() => setActive(null)}>
         <div className="brand__circle">

@@ -107,12 +107,21 @@ export async function fetchPreceptorJustificaciones() {
     const data = await apiGet("/api/preceptores/me/justificaciones");
     if (!Array.isArray(data)) return [];
 
-    return data.map((j) => ({
-      ...j,
-      documentoUrl: j.documentoUrl
-        ? normalizeDocumentoUrl(j.documentoUrl)
-        : null,
-    }));
+    return data.map((j) => {
+      const apellido = j.apellido ?? j.alumnoApellido ?? "";
+      const nombre = j.nombre ?? j.alumnoNombre ?? "";
+      const dni = j.dni ?? j.alumnoDni ?? "";
+
+      return {
+        ...j,
+        apellido,
+        nombre,
+        dni,
+        documentoUrl: j.documentoUrl
+          ? normalizeDocumentoUrl(j.documentoUrl)
+          : null,
+      };
+    });
   } catch (err) {
     console.error("fetchPreceptorJustificaciones error", err);
     return [];
@@ -159,8 +168,9 @@ export async function updatePreceptorNotificacion(id, fields = {}) {
   if (Object.keys(payload).length === 0) return null;
 
   try {
+    const idParam = encodeURIComponent(String(id)); // <- cambio clave
     const data = await apiPatch(
-      `/api/preceptores/me/notificaciones/${encodeURIComponent(id)}`,
+      `/api/preceptores/me/notificaciones/${idParam}`,
       payload
     );
     return data || null;
@@ -173,9 +183,8 @@ export async function updatePreceptorNotificacion(id, fields = {}) {
 export async function deletePreceptorNotificacion(id) {
   if (!id) return false;
   try {
-    await apiDelete(
-      `/api/preceptores/me/notificaciones/${encodeURIComponent(id)}`
-    );
+    const idParam = encodeURIComponent(String(id));
+    await apiDelete(`/api/preceptores/me/notificaciones/${idParam}`);
     return true;
   } catch (err) {
     console.error("deletePreceptorNotificacion error", err);
