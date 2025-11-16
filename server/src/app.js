@@ -1,5 +1,3 @@
-// src/app.js
-
 import express from "express";
 import morgan from "morgan";
 import cors from "cors"; 
@@ -7,20 +5,21 @@ import cors from "cors";
 
 // 🔹 Importación de Rutas
 
-// 🔑 RUTA PRINCIPAL DE ALUMNOS/GESTIÓN (Contiene /api/alumnos/me/datos)
+// 🔑 RUTA PRINCIPAL DE ALUMNOS (Contiene /api/alumnos/perfil, /avatar, etc.)
 import alumnosGestiónRoutes from "./routes/alumnos.routes.js"; 
 
-// 💡 RUTA DE AUTENTICACIÓN
+// 🔑 RUTA DE CALIFICACIONES
+import calificacionesRoutes from "./routes/calificaciones.routes.js"; 
+
+// 🔑 RUTA DE CONTACTO (NUEVA)
+import contactoRoutes from "./routes/contacto.routes.js"; 
+
+// 💡 OTRAS RUTAS
 import authRoutes from "./routes/auth.routes.js"; 
-// 💡 OTRAS RUTAS (Mantenemos si sabes que estos archivos existen)
 import docentesRoutes from "./routes/docentes.routes.js";
 import preceptoresRoutes from "./routes/preceptores.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
-// ❌ RUTAS ELIMINADAS: Si confirmaste que borraste estos archivos, no deben importarse:
-// import ofertaAcademicaRoutes from "./routes/ofertaAcademica.routes.js"; 
-// import constanciasRoutes from "./routes/constancias.routes.js";
-// (No incluir la que está fallando ahora: alumnoPerfil.routes.js)
 
 const app = express();
 
@@ -49,21 +48,26 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 // 🔹 CONEXIÓN DE RUTAS API 
 
+// Autenticación
 app.use("/api/auth", authRoutes);
 
-// 🔑 MONTAJE CRUCIAL DE ALUMNOS
+// Alumnos (Perfil, datos personales, etc.)
 app.use("/api/alumnos", alumnosGestiónRoutes); 
 
+// Calificaciones (Nueva ruta)
+app.use("/api/calificaciones", calificacionesRoutes); 
+
+// 🚨 CONTACTO (Institucional y Docentes)
+app.use("/api/contacto", contactoRoutes);
+
+// Otros roles
 app.use("/api/docentes", docentesRoutes);
 app.use("/api/preceptores", preceptoresRoutes);
 app.use("/api/admin", adminRoutes);
 
-// 🔹 MONTAJE DE GESTIÓN (CRUD)
-
-
-
 
 // 🔹 404 API Not Found
+// Asegúrate de que esto siempre esté después de todos los montajes de rutas /api
 app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));
 
 export default app;
