@@ -442,6 +442,10 @@ export async function updatePreceptorNotificacion(req, res, next) {
     const userId = me.usuario_id;
     const id = Number(req.params.id);
 
+    console.log("PATCH /me/notificaciones/:id");
+    console.log("  userId:", userId, "id:", id);
+    console.log("  body recibido:", req.body);
+
     if (!id || Number.isNaN(id)) {
       return res.status(400).json({ error: "ID inválido" });
     }
@@ -449,6 +453,8 @@ export async function updatePreceptorNotificacion(req, res, next) {
     const notif = await prisma.notificaciones.findFirst({
       where: { id, usuario_id: userId },
     });
+
+    console.log("  notif antes:", notif && { id: notif.id, leida: notif.leida, favorito: notif.favorito });
 
     if (!notif) {
       return res.status(404).json({ error: "Notificación no encontrada" });
@@ -462,10 +468,14 @@ export async function updatePreceptorNotificacion(req, res, next) {
       return res.status(400).json({ error: "Nada para actualizar" });
     }
 
+    console.log("  data a actualizar:", data);
+
     const updated = await prisma.notificaciones.update({
       where: { id },
       data,
     });
+
+    console.log("  notif después:", { id: updated.id, leida: updated.leida, favorito: updated.favorito });
 
     const out = {
       id: updated.id,
@@ -482,6 +492,7 @@ export async function updatePreceptorNotificacion(req, res, next) {
 
     res.json(out);
   } catch (err) {
+    console.error("updatePreceptorNotificacion error", err);
     next(err);
   }
 }
