@@ -9,6 +9,7 @@ import alumnosRoutes from "./routes/alumnos.routes.js";
 import docentesRoutes from "./routes/docentes.routes.js";
 import preceptoresRoutes from "./routes/preceptores.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import alumnoNotificacionesRoutes from "./routes/alumnos.notificaciones.routes.js";
 
 // 🔹 Rutas nuevas / específicas
 import ofertaAcademicaRoutes from "./routes/ofertaAcademica.routes.js";
@@ -16,6 +17,7 @@ import constanciasRoutes from "./routes/constancias.routes.js";
 import gestionAlumnosRouter from "./routes/gestionalumnos.routes.js";
 import calificacionesRoutes from "./routes/calificaciones.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 
 const app = express();
 
@@ -82,6 +84,11 @@ app.use("/api/ofertaAcademica", ofertaAcademicaRoutes);
 
 // Constancias (historial académico, PDFs, etc.)
 app.use("/api/constancias", constanciasRoutes);
+
+// Notificaciones (se debe ubicar ANTES del 404)
+app.use("/api/notificaciones", notificacionesRoutes);
+
+app.use("/api/alumnos", alumnoNotificacionesRoutes);
 
 // =======================
 //  404 para /api

@@ -9,3 +9,4 @@ export async function postAlumno(req, res) {
   const a = await createAlumno(req.body);
   res.status(201).json(a);
 }
+
