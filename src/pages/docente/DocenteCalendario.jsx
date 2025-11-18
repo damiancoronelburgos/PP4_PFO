@@ -24,20 +24,62 @@ export default function DocenteCalendario({ onVolver }) {
   const [comisionesCalOptions, setComisionesCalOptions] = useState([]);
   const hasComisionesForEvents = comisionesCalOptions.length > 0;
 
-  const loadEventos = async () => {
-    try {
-      setLoadingEventos(true);
-      const { data } = await api.get(`/calendario/docente/eventos`, {
-        params: { year: calYear, month: calMonth + 1 },
-      });
-      setEventosPorDia(new Map(Object.entries(data)));
-      setErrEventos("");
-    } catch (e) {
-      setErrEventos("No se pudo cargar eventos.");
-    } finally {
-      setLoadingEventos(false);
-    }
+  const loadComisiones = async () => {
+  try {
+    const data = await api.get("/docentes/me/comisiones");
+    const arr = Array.isArray(data?.data) ? data.data : [];
+    setComisionesCalOptions(arr);
+  } catch (e) {
+    console.error("No se pudieron cargar comisiones", e);
+    setComisionesCalOptions([]);
+  }
   };
+
+
+
+
+  const loadEventos = async () => {
+  try {
+    setLoadingEventos(true);
+
+    const url = `/calendario/docente/eventos?year=${calYear}&month=${calMonth + 1}`;
+    const result = await api.get(url);
+
+    // La API devuelve { data: { "15": [evento1], "20": [evento2] } }
+    const mapObj = result?.data ?? {};
+
+    console.log("Eventos recibidos (crudo):", mapObj);
+
+    // Convertimos las claves a número para que .get(day) funcione
+    const entries = Object.entries(mapObj).map(([dayStr, events]) => [
+      Number(dayStr),
+      events,
+    ]);
+
+    setEventosPorDia(new Map(entries));
+
+    setErrEventos("");
+  } catch (e) {
+    console.error("Error cargando eventos:", e);
+    setErrEventos("No se pudo cargar eventos.");
+  } finally {
+    setLoadingEventos(false);
+  }
+};
+  useEffect(() => {
+  async function loadComisiones() {
+    try {
+      const data = await fetchDocenteComisiones();
+      setComisionesCalOptions(
+        data.map(c => ({ id: c.id, codigo: c.codigo }))
+      );
+    } catch {
+      console.error("No se pudieron cargar comisiones");
+    }
+  }
+  loadComisiones();
+  }, []);
+
 
   useEffect(() => {
     loadEventos();
@@ -64,6 +106,9 @@ export default function DocenteCalendario({ onVolver }) {
       alert("Error guardando evento");
     }
   };
+  useEffect(() => {
+  loadComisiones();
+}, []);
 
   const deleteDraft = async () => {
     try {

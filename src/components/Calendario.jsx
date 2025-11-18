@@ -100,14 +100,29 @@ export default function Calendario({
                 title={hasComisionesForEvents ? "Click para agregar evento" : "No hay comisiones para agregar eventos"}
               >
                 <div className="calendar__day">{day}</div>
+
                 <div className="calendar__events">
                   {dayEvents.map((ev, i) => (
                     <div
                       key={`${ev.id ?? "r"}-${i}`}
-                      className="calendar__pill calendar__pill--clickable"
-                      style={{ background: colorFromCommission(ev.comisionCodigo) }}
-                      title={`${ev.titulo} — ${ev.comisionCodigo || "Institucional"}`}
-                      onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                      className="calendar__pill"
+                      style={{
+                        background: colorFromCommission(ev.comisionCodigo),
+                        cursor: ev.comisionCodigo ? "pointer" : "default",
+                        opacity: ev.comisionCodigo ? 1 : 0.75,
+                      }}
+
+                      // 🚫 Evento institucional = solo lectura
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (ev.comisionCodigo) openEditModal(ev);
+                      }}
+
+                      title={
+                        ev.comisionCodigo
+                          ? `${ev.titulo} — ${ev.comisionCodigo}`
+                          : `${ev.titulo} — Institucional (solo lectura)`
+                      }
                     >
                       <div className="calendar__pill-title">{ev.titulo}</div>
                       <div className="calendar__pill-sub">
@@ -127,6 +142,60 @@ export default function Calendario({
           </button>
         </div>
       </div>
+
+      {/* ──────────────────────────────── */}
+      {/* MODAL DE AGREGAR / EDITAR EVENTO */}
+      {/* ──────────────────────────────── */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{modalMode === "add" ? "Nuevo evento" : "Editar evento"}</h3>
+
+            <label>Fecha</label>
+            <input
+              type="date"
+              value={draft.fecha}
+              onChange={(e) => setDraft({ ...draft, fecha: e.target.value })}
+            />
+
+            <label>Título</label>
+            <input
+              type="text"
+              value={draft.titulo}
+              onChange={(e) => setDraft({ ...draft, titulo: e.target.value })}
+            />
+
+            <label>Comisión</label>
+            <select
+              value={draft.comisionId}
+              onChange={(e) => setDraft({ ...draft, comisionId: e.target.value })}
+            >
+              <option value="">Institucional</option>
+              {comisionesCalOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.codigo}
+                </option>
+              ))}
+            </select>
+
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </button>
+
+              {modalMode === "edit" && (
+                <button className="btn btn-danger" onClick={deleteDraft}>
+                  Eliminar
+                </button>
+              )}
+
+              <button className="btn btn-primary" onClick={saveDraft}>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

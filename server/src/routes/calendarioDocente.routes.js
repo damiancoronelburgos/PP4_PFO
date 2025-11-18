@@ -1,12 +1,11 @@
 import { Router } from "express";
-import db from "../db/prisma.js"; // o tu helper mysql2
-import { authRequired } from "../middlewares/auth.js";
+import prisma from "../db/prisma.js";
+import { auth as authRequired } from "../middlewares/auth.js";
 
 const router = Router();
 
 /**
  * GET /api/calendario/docente/eventos
- * Query: year, month
  */
 router.get("/docente/eventos", authRequired, async (req, res) => {
   try {
@@ -17,46 +16,59 @@ router.get("/docente/eventos", authRequired, async (req, res) => {
       return res.status(400).json({ error: "Parámetros year y month requeridos" });
     }
 
-    // Obtener id del docente asociado
-    const [docRow] = await db.execute(
-      "SELECT id FROM docentes WHERE usuario_id = ? LIMIT 1",
-      [usuarioId]
-    );
+    const docente = await prisma.docentes.findFirst({
+      where: { usuario_id: usuarioId },
+      select: { id: true },
+    });
 
-    if (!docRow || !docRow[0]) {
+    if (!docente) {
       return res.status(403).json({ error: "No es docente válido" });
     }
 
-    const docenteId = docRow[0].id;
+    const yearInt = Number(year);
+    const monthInt = Number(month);
 
-    const [rows] = await db.execute(
-      `SELECT e.id, e.fecha, e.titulo, e.comision_id,
-              c.codigo AS comisionCodigo
-       FROM eventos e
-       LEFT JOIN comisiones c ON c.id = e.comision_id
-       WHERE YEAR(e.fecha)=? AND MONTH(e.fecha)=?
-         AND (
-              e.comision_id IS NULL
-              OR c.docente_id = ?
-         )
-       ORDER BY e.fecha ASC`,
-      [year, month, docenteId]
-    );
+    const start = new Date(Date.UTC(yearInt, monthInt - 1, 1, 0, 0, 0));
+    const end = new Date(Date.UTC(yearInt, monthInt, 1, 0, 0, 0));
 
-    // Agrupar por día
-    const map = {};
-    rows.forEach(ev => {
-      const day = Number(ev.fecha.getDate());
-      if (!map[day]) map[day] = [];
-      map[day].push(ev);
+    const eventos = await prisma.eventos.findMany({
+      where: {
+        AND: [
+          { fecha: { gte: start } },
+          { fecha: { lt: end } },
+          {
+            OR: [
+              { comision_id: null },
+              { comisiones: { docente_id: docente.id } },
+            ],
+          },
+        ],
+      },
+      include: {
+        comisiones: { select: { codigo: true } },
+      },
+      orderBy: { fecha: "asc" },
     });
 
-    res.json({ data: map });
+    const map = {};
+    for (const ev of eventos) {
+      const day = new Date(ev.fecha).getUTCDate();
+      if (!map[day]) map[day] = [];
+      map[day].push({
+        id: ev.id,
+        fecha: ev.fecha,
+        titulo: ev.titulo,
+        comisionCodigo: ev.comisiones?.codigo ?? null,
+      });
+    }
+
+    return res.json({ data: map });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "Error cargando eventos" });
+    return res.status(500).json({ error: "Error cargando eventos" });
   }
 });
+
 
 /**
  * POST /api/calendario/docente/eventos
@@ -70,27 +82,33 @@ router.post("/docente/eventos", authRequired, async (req, res) => {
       return res.status(400).json({ error: "Campos requeridos: fecha, titulo" });
     }
 
-    const isInstitutional = !comisionId;
+    const docente = await prisma.docentes.findFirst({
+      where: { usuario_id: usuarioId },
+      select: { id: true },
+    });
 
-    // Validar que el docente pueda agregar en esa comisión
-    if (!isInstitutional) {
-      const [valid] = await db.execute(
-        `SELECT 1 FROM comisiones c
-         JOIN docentes d ON d.id = c.docente_id
-         WHERE c.id=? AND d.usuario_id=?`,
-        [comisionId, usuarioId]
-      );
-      if (!valid.length) {
-        return res.status(403).json({ error: "No puede agregar evento en esta comisión" });
-      }
+    if (!docente) {
+      return res.status(403).json({ error: "No es docente válido" });
     }
 
-    const [result] = await db.execute(
-      "INSERT INTO eventos (fecha, titulo, comision_id) VALUES (?,?,?)",
-      [fecha, titulo, comisionId || null]
-    );
+    // Validar si puede agregar evento en esa comisión
+    if (comisionId) {
+      const comOK = await prisma.comisiones.findFirst({
+        where: { id: comisionId, docente_id: docente.id },
+      });
+      if (!comOK) return res.status(403).json({ error: "No puede agregar evento en esta comisión" });
+    }
 
-    res.json({ ok: true, id: result.insertId });
+    const ev = await prisma.eventos.create({
+      data: {
+        fecha: new Date(fecha),
+        titulo,
+        comision_id: comisionId || null,
+      },
+      select: { id: true },
+    });
+
+    res.json({ ok: true, id: ev.id });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error guardando evento" });
@@ -102,28 +120,32 @@ router.post("/docente/eventos", authRequired, async (req, res) => {
  */
 router.delete("/docente/eventos/:id", authRequired, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const usuarioId = req.user.id;
 
-    // Validar que pueda eliminarlo
-    const [rows] = await db.execute(
-      `SELECT e.id, e.comision_id
-       FROM eventos e
-       LEFT JOIN comisiones c ON c.id = e.comision_id
-       WHERE e.id=? AND (
-          e.comision_id IS NULL
-          OR c.docente_id = (
-              SELECT id FROM docentes WHERE usuario_id=? LIMIT 1
-          )
-       )`,
-      [id, usuarioId]
-    );
+    const docente = await prisma.docentes.findFirst({
+      where: { usuario_id: usuarioId },
+      select: { id: true },
+    });
 
-    if (!rows.length) {
-      return res.status(403).json({ error: "No puede eliminar este evento" });
+    if (!docente) {
+      return res.status(403).json({ error: "No es docente válido" });
     }
 
-    await db.execute("DELETE FROM eventos WHERE id=?", [id]);
+    const evento = await prisma.eventos.findFirst({
+      where: {
+        id,
+        OR: [
+          { comision_id: null },
+          { comision: { docente_id: docente.id } },
+        ],
+      },
+    });
+
+    if (!evento) return res.status(403).json({ error: "No puede eliminar este evento" });
+
+    await prisma.eventos.delete({ where: { id } });
+
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
