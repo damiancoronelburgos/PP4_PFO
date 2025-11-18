@@ -34,7 +34,7 @@ export default function Login() {
     const pass = e.target.pass.value.trim();
 
     try {
-      const data = await apiFetch("/api/auth/login", {
+      const data = await apiFetch("/auth/login", {
         method: "POST",
         body: { username: user, password: pass },
       });

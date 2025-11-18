@@ -5,6 +5,8 @@ import Asistencia from "./docente/Asistencia";
 import Acta from "./docente/Acta";
 import Notificaciones from "./docente/Notificaciones";
 import "../styles/docente.css";
+import DocenteCalendario from "./docente/DocenteCalendario.jsx";
+
 
 export default function Docente() {
   const [activeItem, setActiveItem] = useState("inicio");
@@ -19,6 +21,11 @@ export default function Docente() {
         return <Acta />;
       case "notificaciones":
         return <Notificaciones />;
+      case "calendario":
+        return (
+          <DocenteCalendario onVolver={() => setActiveItem("inicio")} />
+        );
+
       default:
         return <h3 className="bienvenida">Seleccione una opción del menú</h3>;
     }

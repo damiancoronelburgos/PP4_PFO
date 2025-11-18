@@ -16,6 +16,8 @@ import constanciasRoutes from "./routes/constancias.routes.js";
 import gestionAlumnosRouter from "./routes/gestionalumnos.routes.js";
 import calificacionesRoutes from "./routes/calificaciones.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
+import calendarioDocenteRoutes from "./routes/calendarioDocente.routes.js";
+
 
 const app = express();
 
@@ -73,6 +75,10 @@ app.use("/api/contacto", contactoRoutes);
 app.use("/api/docentes", docentesRoutes);
 app.use("/api/preceptores", preceptoresRoutes);
 app.use("/api/admin", adminRoutes);
+
+// Calendario docente
+app.use("/api/calendario", calendarioDocenteRoutes);
+
 
 // Gestión de alumnos (ABM desde panel admin)
 app.use("/api/gestion", gestionAlumnosRouter);
