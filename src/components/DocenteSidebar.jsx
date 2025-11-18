@@ -17,6 +17,8 @@ export default function DocenteSidebar({ setActiveItem, activeItem }) {
     { key: "asistencia", label: "Asistencia" },
     { key: "actas", label: "Acta de Cursada" },
     { key: "notificaciones", label: "Notificaciones" },
+    { key: "calendario", label: "Calendario" },
+
   ];
 
   return (
