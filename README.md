@@ -1,194 +1,185 @@
-Instituto Superior Prisma — Front (Vite) + API (Node) + MySQL (Docker)
+# PP4_PFO – Instituto Superior Prisma
 
-Proyecto React + Vite (frontend) con backend Node/Express y MySQL.
-La base se levanta con Docker; los datos iniciales se migran desde src/data/*.json hacia MySQL.
+PP4_PFO es una aplicación web full stack para la gestión académica de un instituto terciario.  
+Incluye:
 
-Requisitos
+- **Backend**: API REST en **Node.js + Express** con **Prisma** sobre **MySQL**.
+- **Frontend**: SPA en **React + Vite** con vistas diferenciadas para **Alumno**, **Docente**, **Preceptor** y **Administrador**.
 
-Docker Desktop (y Docker Compose)
+---
 
-Node.js v18+ (recomendado v20) en tu host
+## Objetivo y alcance
 
-Puertos libres:
+El objetivo es centralizar la gestión académica en un único sistema:
 
-API: 3000
+- Gestión de alumnos, docentes, preceptores y administrativos (a nivel académico).
+- Administración de materias y comisiones.
+- Registro y consulta de:
+  - Inscripciones  
+  - Asistencias  
+  - Calificaciones  
+  - Justificaciones  
+  - Notificaciones y eventos de calendario
 
-MySQL expuesto: 3307 (mapeado a 3306 dentro del contenedor)
+### Módulos principales implementados
 
-Si ya tenés MySQL local en 3306, no hay problema: el contenedor expone 3307:3306.
+- **Autenticación y autorización**
+  - Login con usuario y contraseña (`/api/auth/login`)
+  - JWT + middleware `auth` y `allowRoles` para proteger rutas por rol
 
-Estructura del repo (resumen)
-PP4_PFO/
-├─ docker-compose.yml
-├─ server/                # backend (Node/Express + Prisma)
-│  ├─ Dockerfile
-│  ├─ package.json
-│  ├─ .env.example
-│  └─ src/
-│     ├─ server.js        # entrypoint de la API
-│     ├─ app.js           # cors, rutas, middlewares
-│     ├─ routes/          # /api/auth, etc.
-│     ├─ controllers/     # auth.controller.js, etc.
-│     ├─ db/              # prisma.js
-│     └─ scripts/
-│        └─ migrate_from_json.js
-├─ src/                   # frontend (React + Vite)
-│  ├─ pages/              # Login.jsx, etc.
-│  ├─ lib/                # api.js
-│  └─ data/               # *.json (fuente para la migración)
-└─ package.json           # dependencias del front
+- **Alumno**
+  - Perfil y datos académicos
+  - Comisiones, calificaciones, asistencias
+  - Justificaciones propias
+  - Notificaciones y calendario
 
-Variables de entorno
-Backend (/server/.env)
+- **Docente**
+  - Datos del docente
+  - Comisiones a cargo
+  - Soporte para carga de asistencias y calificaciones
 
-Crear desde el template .env.example:
+- **Preceptor**
+  - Comisiones a cargo y métricas
+  - Registro/consulta de asistencias
+  - Gestión de justificaciones (aprobar/rechazar)
+  - Comunicaciones a alumnos
+  - Notificaciones y calendario
 
-DB_HOST=127.0.0.1
-DB_PORT=3307
-DB_USER=root
-DB_PASS=root
-DB_NAME=prisma_app
+- **Administrativo / Gestión académica**
+  - ABM de alumnos (registro académico)
+  - Gestión de materias y comisiones
+  - Constancias e historial académico
+  - Comunicaciones institucionales
 
-# CORS para desarrollo (front en Vite)
-CORS_ORIGIN=http://localhost:5173
+---
 
-# JWT
-JWT_SECRET=supersecret
+## Arquitectura
 
+- **Estilo**: cliente–servidor, backend por capas y módulos de dominio.
 
-Estas variables las usa el script de migración en tu host y la API dentro del contenedor.
+- **Frontend (React + Vite)**
+  - `src/pages`: vistas por rol (`Alumnos`, `Docente`, `Preceptor`, `Administrador`, `Login`)
+  - `src/components`: sidebars, rutas protegidas, navegación por rol
+  - `src/lib`: wrapper HTTP (`api.js`) y clientes de API por dominio (`alumnos.api.js`, `preceptor.api.js`, etc.)
 
-Front (/.env en la raíz del repo)
-VITE_API_URL=http://localhost:3000
+- **Backend (Node.js + Express)**
+  - `server/src/app.js`: configuración de Express y middlewares
+  - `server/src/routes/*.routes.js`: rutas agrupadas por dominio (`auth`, `alumnos`, `docentes`, `preceptores`, `ofertaAcademica`, `constancias`, `notificaciones`, etc.)
+  - `server/src/controllers/*.controller.js`: lógica de cada caso de uso
+  - `server/src/services/*.service.js`: lógica de dominio reutilizable
+  - `server/src/db/prisma.js`: instancia de `PrismaClient`
 
+- **Base de datos (MySQL)**  
+  - Esquema normalizado con tablas: `usuarios`, `roles`, `alumnos`, `docentes`, `preceptores`, `materias`, `comisiones`, `inscripciones`, `asistencias`, `calificaciones`, `justificaciones`, `notificaciones`, `eventos`, `instituto`, `preceptor_comision`.
+  - SQL inicial: `server/db/init/01_full.sql`
+  - Modelo Prisma: `server/prisma/schema.prisma`
 
-En dev usamos URL absoluta y CORS en la API (útil si mañana front/back viven en hosts distintos).
+---
 
-Puesta en marcha (desde cero)
+## Estado del proyecto y limitaciones
 
-Todos los comandos se ejecutan en Windows PowerShell / CMD.
+> ⚠️ El sistema está en **desarrollo / preproducción**.
 
-1) Levantar DB y API con Docker (desde la raíz del repo)
-docker compose up -d --build
-docker compose ps
+- No existe un flujo completo de **alta de usuarios** desde la interfaz:
+  - No hay pantalla de registro.
+  - No hay endpoints públicos para crear usuarios.
+- Los usuarios que pueden iniciar sesión deben estar **precargados en la BD**:
+  - La tabla `usuarios` (y sus vínculos con `alumnos`, `docentes`, `preceptores`, `administradores`) se llena vía SQL o scripts (`migrate_from_json.js`).
+- Conviven partes “viejas” y “nuevas”:
+  - Uso residual de `src/data/*.json` en el frontend (en proceso de reemplazo por API real).
+  - Middlewares y rutas de notificaciones duplicadas que deben consolidarse.
 
+Líneas de trabajo futuro:
 
-Deberías ver algo como:
+- Completar módulo de gestión de usuarios (alta, baja, cambio de rol) y vistas de administración.
+- Unificar middlewares de autenticación y routers de notificaciones.
+- Eliminar dependencias de JSON locales en producción.
+- Mejorar validaciones, manejo de errores y experiencia de usuario.
 
-pp4_pfo-db-1  0.0.0.0:3307->3306/tcp
-pp4_pfo-api-1 0.0.0.0:3000->3000/tcp
+---
 
+## Tecnologías principales
 
-Logs en vivo de la API:
+**Backend**
 
-docker compose logs -f api
+- Node.js, Express  
+- Prisma ORM (`@prisma/client`)  
+- MySQL 
+- JWT (`jsonwebtoken`), `bcryptjs`  
+- Middlewares: `cors`, `morgan`, `multer`  
+- Configuración: `dotenv`, `server/src/config/env.js`  
+- Docker/Docker Compose para backend + base de datos  
 
-2) Instalar deps del backend en tu host (solo para la migración)
+**Frontend**
 
-El script de migración corre en tu host, no en el contenedor. Necesita dotenv.
+- React (hooks), Vite  
+- React Router DOM  
+- Wrapper `fetch` propio (`src/lib/api.js`)  
+- Generación de PDFs (constancias): `jspdf`, `jspdf-autotable`, `html2pdf.js`  
+- Estilos CSS modulares por sección  
 
+---
+
+## Puesta en marcha rápida
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/damiancoronelburgos/PP4_PFO PP4_PFO
+cd PP4_PFO
+```
+
+### 2. Backend – configuración
+
+En `/server`, crear un archivo `.env` (basado en `.env.example`):
+
+```env
+PORT=3000
+JWT_SECRET=alguna_clave_segura
+DATABASE_URL="mysql://usuario:password@host:3306/nombre_base"
+```
+
+Crear la base y cargar el esquema:
+
+- Crear BD vacía (por ejemplo `prisma_app`).
+- Importar `server/db/init/01_full.sql` en esa base.
+
+### 3. Backend con Docker (recomendado)
+
+```bash
 cd server
-npm install
+docker-compose up -d
+```
 
-3) Migrar JSON → MySQL
+El backend quedará expuesto típicamente en `http://localhost:3000`.
 
-Con el contenedor db arrancado y tu /server/.env configurado:
+### 4. Frontend
 
-npm run migrate:json
+En la raíz del proyecto:
 
-
-Deberías ver: Migración OK.
-
-Si algo falla de conexión, confirmá:
-
-docker compose ps muestra pp4_pfo-db-1 Up en 3307
-
-el contenido de /server/.env (host, puerto, user/pass)
-
-4) Instalar deps del front y levantar Vite
-
-Volvé a la raíz y levantá el front:
-
-cd ..
+```bash
 npm install
 npm run dev
+```
 
+Configurar la URL de la API en un `.env` en la raíz:
 
-Abrí http://localhost:5173.
-El front llama a la API en http://localhost:3000 vía VITE_API_URL.
+```env
+VITE_API_BASE=http://localhost:3000/api
+```
 
-Probar rápido
-API
-curl -i http://localhost:3000/api/health
+El frontend se ejecutará en un puerto tipo `http://localhost:5173`.
 
-Login
+---
 
-En el front (pantalla de Login), probá un usuario/clave de src/data/users.json.
-Si autenticó, el backend responde con { token, user: { id, username, role } } y el front redirige por rol.
+## Usuarios de prueba
 
-Endpoints clave (extracto)
+En el estado actual, solo se puede ingresar con usuarios precargados en la tabla `usuarios`.  
+Ejemplos típicos (según el SQL inicial):
 
-GET /api/health → { ok: true }
+- `alumno1` / `1111` – rol Alumno  
+- `docente2` / `2222` – rol Docente  
+- `administrativo3` / `3333` – rol Administrativo  
+- `preceptor4` / `4444` – rol Preceptor  
 
-POST /api/auth/login
-Body:
-
-{ "username": "docente2", "password": "..." }
-
-
-Respuesta:
-
-{
-  "token": "JWT...",
-  "user": { "id": 1, "username": "docente2", "role": "docente", "displayName": "docente2" }
-}
-
-Comandos útiles
-:: logs API
-docker compose logs -f api
-
-:: consola MySQL dentro del contenedor
-docker compose exec db mysql -uroot -proot prisma_app
-
-:: reconstruir solo la API
-docker compose up -d --build api
-
-:: reset total (baja servicios + borra volúmenes)
-docker compose down -v
-
-Solución de problemas frecuentes
-
-“Failed to fetch” en Login y en logs solo aparece OPTIONS /api/auth/login
-
-Revisar CORS en server/src/app.js (app.use(cors(...)) antes de rutas)
-
-Confirmar CORS_ORIGIN=http://localhost:5173 en /server/.env
-
-Reconstruir API: docker compose up -d --build api
-
-ECONNREFUSED 127.0.0.1:3307 al migrar
-
-Asegurate de que el contenedor db esté Up: docker compose ps
-
-Puerto correcto en /server/.env (DB_PORT=3307)
-
-Reintentá: npm run migrate:json
-
-“Cannot find module 'dotenv/config'” al migrar
-
-Ejecutá en /server: npm install dotenv
-
-Asegurate que migrate_from_json.js hace import 'dotenv/config'
-
-Conflicto de puertos
-
-Si 3307 está ocupado, cambiá el mapeo en docker-compose.yml ("3308:3306") y actualizá DB_PORT en /server/.env.
-
-Notas de proyecto
-
-CORS habilitado en la API para http://localhost:5173 (dev).
-En producción, agregá tu dominio a CORS_ORIGIN (coma separada).
-
-No se persiste JSON: toda lectura pasó a MySQL; src/data/*.json solo es fuente de migración.
-
-.gitignore en la raíz ignora node_modules del front y del back, y los .env.
+Las contraseñas se guardan como hash `bcrypt` en la base de datos.
