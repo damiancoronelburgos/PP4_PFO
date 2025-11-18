@@ -2,7 +2,11 @@ import prisma from "../db/prisma.js";
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
-import { updateUserAvatar, changeUserPassword as changeUserPasswordGeneric } from "../services/userAccount.service.js";
+import {
+  updateUserAvatar,
+  changeUserPassword as changeUserPasswordGeneric,
+  DEFAULT_AVATAR_URL,
+} from "../services/userAccount.service.js";
 
 // ===== Helpers generales =====
 

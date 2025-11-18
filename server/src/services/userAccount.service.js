@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
 
-const DEFAULT_AVATAR_URL = "/uploads/avatars/default-avatar.png";
+export const DEFAULT_AVATAR_URL = "/uploads/avatars/default-avatar.png";
 
 function resolveAvatarDiskPath(avatarUrl) {
   if (!avatarUrl) return null;

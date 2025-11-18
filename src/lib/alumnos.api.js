@@ -76,3 +76,74 @@ export async function changeAlumnoPassword(payload) {
     };
   }
 }
+// =================== NOTIFICACIONES (ALUMNO) ===================
+export async function fetchAlumnoNotificaciones() {
+  try {
+    const data = await apiGet("/api/alumnos/me/notificaciones");
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("fetchAlumnoNotificaciones error", err);
+    return [];
+  }
+}
+
+// PATCH: marcar leída / favorito
+export async function updateAlumnoNotificacion(id, fields = {}) {
+  if (!id) return null;
+  try {
+    const data = await apiPatch(
+      `/api/alumnos/me/notificaciones/${encodeURIComponent(id)}`,
+      fields
+    );
+    return data || null;
+  } catch (err) {
+    console.error("updateAlumnoNotificacion error", err);
+    return null;
+  }
+}
+
+// DELETE
+export async function deleteAlumnoNotificacion(id) {
+  if (!id) return false;
+  try {
+    await apiDelete(
+      `/api/alumnos/me/notificaciones/${encodeURIComponent(id)}`
+    );
+    return true;
+  } catch (err) {
+    console.error("deleteAlumnoNotificacion error", err);
+    return false;
+  }
+}
+
+// ASISTENCIAS
+export async function fetchAlumnoAsistencias() {
+  try {
+    const data = await apiGet("/api/alumnos/me/asistencias");
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("fetchAlumnoAsistencias error", err);
+    return [];
+  }
+}
+
+// JUSTIFICACIONES
+export async function fetchAlumnoJustificaciones() {
+  try {
+    const data = await apiGet("/api/alumnos/me/justificaciones");
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("fetchAlumnoJustificaciones error", err);
+    return [];
+  }
+}
+
+export async function sendAlumnoJustificacion(formData) {
+  try {
+    const data = await apiPost("/api/alumnos/me/justificaciones", formData);
+    return { ok: true, data };
+  } catch (err) {
+    console.error("sendAlumnoJustificacion error", err);
+    return { ok: false, error: err.message };
+  }
+}
