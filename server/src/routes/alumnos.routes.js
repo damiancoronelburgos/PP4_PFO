@@ -8,6 +8,8 @@ import { auth, allowRoles } from "../middlewares/auth.js";
 import uploadAvatar from "../middlewares/uploadAvatar.js";
 import { updateUserAvatar, changeUserPassword } from "../services/userAccount.service.js";
 
+
+
 const r = Router();
 
 // ===============================
@@ -145,6 +147,42 @@ r.get("/me/calificaciones", allowRoles("alumno"), async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+// ===============================
+// GET /api/alumnos/me/notificaciones
+// ===============================
+r.get(
+  "/me/notificaciones",
+  allowRoles("alumno"),
+  async (req, res) => {
+    try {
+      const alumno = await prisma.alumnos.findFirst({
+        where: { usuario_id: req.user.sub },
+        select: { id: true },
+      });
+
+      if (!alumno) {
+        return res.status(404).json({ error: "Alumno no encontrado" });
+      }
+
+      // Obtener notificaciones: destino = todos, alumno, o personales del usuario
+      const notificaciones = await prisma.notificaciones.findMany({
+        where: {
+          OR: [
+            { destino: "todos" },
+            { destino: "alumno" },
+            { usuario_id: req.user.sub }
+          ]
+        },
+        orderBy: { fecha: "desc" }
+      });
+
+      return res.json(notificaciones);
+    } catch (err) {
+      console.error("GET /api/alumnos/me/notificaciones error:", err);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+  }
+);
 
 // ===============================
 // GET /api/alumnos/me/asistencias
