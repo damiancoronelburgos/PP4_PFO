@@ -8,6 +8,7 @@ import prisma from "../db/prisma.js";
 import { auth, allowRoles } from "../middlewares/auth.js";
 import uploadAvatar from "../middlewares/uploadAvatar.js";
 import { updateUserAvatar, changeUserPassword } from "../services/userAccount.service.js";
+import { getAlumnoCalendario } from "../controllers/alumnoCalendario.controller.js";
 
 
 
@@ -440,28 +441,12 @@ r.get("/docentes", async (req, res) => {
   }
 });
 // ====================================================================
-// GET /api/alumnos/calendario
-// Eventos del calendario visibles para el alumno
+// GET /api/alumnos/calendario (USANDO CONTROLLER)
 // ====================================================================
-r.get("/calendario", async (req, res) => {
-  try {
-    const alumno = await prisma.alumnos.findFirst({
-      where: { usuario_id: req.user.sub },
-      select: { id: true },
-    });
 
-    if (!alumno) return res.status(404).json({ error: "Alumno no encontrado" });
 
-    const eventos = await prisma.eventos_calendario.findMany({
-      orderBy: { fecha: "asc" }
-    });
+r.get("/calendario", getAlumnoCalendario);
 
-    return res.json(eventos);
-  } catch (err) {
-    console.error("GET /api/alumnos/calendario error:", err);
-    return res.status(500).json({ error: "Error interno del servidor" });
-  }
-});
 // GET /api/alumnos/instituto - Datos del instituto
 r.get("/instituto", async (req, res) => {
   try {

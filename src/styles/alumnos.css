@@ -1383,3 +1383,55 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; }
   color: lightgreen;
   font-weight: 700;
 }
+/* ===========================
+   CALENDARIO ESTILOS
+   =========================== */
+
+.calendario-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cal-card {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  backdrop-filter: blur(6px);
+  position: relative;
+}
+
+.cal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cal-card h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.cal-card p {
+  margin: 4px 0;
+  font-size: 0.95rem;
+  color: #222;
+}
+
+.badge {
+  background: #007bff;
+  color: white;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+.panel-visor {
+  position: relative;
+  z-index: 3;
+}

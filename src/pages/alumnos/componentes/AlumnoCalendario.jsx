@@ -1,85 +1,178 @@
-import React, { useEffect, useState } from "react";
-import "../../../styles/alumnos.css";
+import React, { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../../lib/api";
 
 export default function AlumnoCalendario({ setActive }) {
   const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
+  const [calBase, setCalBase] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d;
+  });
+
+  const [diaSel, setDiaSel] = useState(null);
 
   // ============================
-  // Cargar eventos del backend
+  // CARGAR EVENTOS DESDE LA API
   // ============================
-  async function cargarEventos() {
-    try {
-      setLoading(true);
-
-      const data = await apiFetch("/api/alumnos/calendario");
-      setEventos(data || []);
-
-    } catch (err) {
-      console.error(err);
-      setMsg("Error al cargar el calendario académico.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    cargarEventos();
+    async function cargar() {
+      try {
+        const data = await apiFetch("/api/alumnos/calendario");
+        setEventos(data || []);
+      } catch (err) {
+        console.error("Error cargando calendario:", err);
+      }
+    }
+    cargar();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="panel-wrap">
-        <h2>Cargando calendario académico...</h2>
-      </div>
-    );
-  }
+  // ============================
+  // MAPA DE EVENTOS POR FECHA ISO
+  // ============================
+  const eventosPorDia = useMemo(() => {
+    const map = {};
+    eventos.forEach((e) => {
+      const iso = e.fecha.slice(0, 10); // yyyy-mm-dd
+      (map[iso] ??= []).push(e);
+    });
+    return map;
+  }, [eventos]);
+
+  // ============================
+  // CALCULO PARA LA GRILLA
+  // ============================
+  const y = calBase.getFullYear();
+  const m = calBase.getMonth();
+  const first = new Date(y, m, 1);
+
+  const off = (first.getDay() + 6) % 7;
+  const start = new Date(y, m, 1 - off);
+
+  const cells = useMemo(() => {
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+
+      const iso = d.toISOString().slice(0, 10);
+
+      return {
+        d,
+        iso,
+        inMonth: d.getMonth() === m,
+        evs: eventosPorDia[iso] || []
+      };
+    });
+  }, [start, m, eventosPorDia]);
+
+  // ============================
+  // CAMBIO DE MES
+  // ============================
+  const shiftMonth = (d) => {
+    const n = new Date(calBase);
+    n.setMonth(n.getMonth() + d);
+    setCalBase(n);
+    setDiaSel(null);
+  };
+
+  const mes = calBase.toLocaleDateString("es-AR", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
-    <div className="panel-wrap">
-      <h2 className="profile-title">Calendario Académico</h2>
+    <div className="calendar-wrap">
+      <div className="calendar-card">
 
-      <div className="panel-list">
-        {eventos.length === 0 ? (
-          <p>No hay eventos académicos registrados.</p>
-        ) : (
-          eventos
-            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
-            .map((ev, i) => (
-              <div key={i} className="panel-item">
-                <div className="item-header">
-                  <h3>{ev.titulo}</h3>
-                  {ev.comision && (
-                    <span className="badge">Comisión {ev.comision}</span>
+        {/* ---------------- HEADER ---------------- */}
+        <div className="cal-header">
+          <h2 className="cal-title">Calendario académico</h2>
+        </div>
+
+        {/* ---------------- NAV ---------------- */}
+        <div className="cal-bar">
+          <button className="btn" onClick={() => shiftMonth(-1)}>◀</button>
+          <div className="cal-month">{mes}</div>
+          <button className="btn" onClick={() => shiftMonth(1)}>▶</button>
+        </div>
+
+        {/* ---------------- WEEKDAYS ---------------- */}
+        <div className="cal-weekdays">
+          {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((n) => (
+            <div key={n} className="cal-weekday">{n}</div>
+          ))}
+        </div>
+
+        {/* ---------------- GRID ---------------- */}
+        <div className="cal-grid">
+          {cells.map(({ d, iso, inMonth, evs }, i) => (
+            <button
+              key={i}
+              className={
+                "cal-cell" +
+                (inMonth ? "" : " is-out") +
+                (evs.length ? " has-events" : "")
+              }
+              onClick={() => setDiaSel({ iso, evs })}
+            >
+              <div className="cal-day">{d.getDate()}</div>
+
+              {!!evs.length && (
+                <div className="cal-dots">
+                  {evs.slice(0, 3).map((_, k) => (
+                    <span key={k} className="dot"></span>
+                  ))}
+                  {evs.length > 3 && (
+                    <span className="more">+{evs.length - 3}</span>
                   )}
                 </div>
+              )}
+            </button>
+          ))}
+        </div>
 
-                <p>
-                  <strong>Fecha:</strong>{" "}
-                  {new Date(ev.fecha).toLocaleDateString("es-AR")}
-                </p>
+        {/* ---------------- DETAILS ---------------- */}
+        <div className="cal-details">
+          {!diaSel ? (
+            <p className="muted">Seleccioná un día para ver eventos.</p>
+          ) : (
+            <>
+              <div className="cal-details__head">
+                <h3>
+                  {new Date(diaSel.iso + "T00:00:00").toLocaleDateString("es-AR")}
+                </h3>
 
-                {ev.materia && (
-                  <p>
-                    <strong>Materia:</strong> {ev.materia}
-                  </p>
-                )}
-
-                {ev.descripcion && (
-                  <p>
-                    <strong>Descripción:</strong> {ev.descripcion}
-                  </p>
-                )}
+                <button className="btn" onClick={() => setDiaSel(null)}>
+                  Cerrar
+                </button>
               </div>
-            ))
-        )}
+
+              {diaSel.evs.length === 0 ? (
+                <p className="muted">No hay eventos este día.</p>
+              ) : (
+                <ul className="cal-list">
+                  {diaSel.evs.map((ev) => (
+                    <li key={ev.id} className="cal-item">
+                      <div className="cal-item__title">{ev.titulo}</div>
+
+                      {ev.comision && (
+                        <div className="cal-item__meta">
+                          Comisión: <b>{ev.comision}</b>
+                        </div>
+                      )}
+
+                      {ev.descripcion && (
+                        <div className="cal-item__desc">{ev.descripcion}</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+
       </div>
-
-      
-
-      {msg && <p className="msg">{msg}</p>}
     </div>
   );
 }
+
