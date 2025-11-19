@@ -1383,3 +1383,33 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; }
   color: lightgreen;
   font-weight: 700;
 }
+/*** alumnos.css (with calendar fix applied soon) ***/
+
+/* ==== FIX: que el calendario NO bloquee el sidebar ==== */
+
+.alumnos-page .sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 20 !important;
+}
+
+.alumnos-page .brand {
+  z-index: 21 !important;
+}
+
+.calendar-wrap {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.calendar-card {
+  position: relative;
+  z-index: 2 !important;
+}
+
+.panel-visor {
+  position: relative;
+  z-index: 3;
+}

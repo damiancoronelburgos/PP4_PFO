@@ -1,3 +1,4 @@
+//src/pages/alumnos/componentes/AlumnoAsistenciasYJustificaciones.jsx
 import React, { useEffect, useState } from "react";
 import "../../../styles/alumnos.css";
 import {
@@ -121,7 +122,7 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                 {/* HEADER */}
                 <div className="asis-header">
                     <h2 className="asis-title">Asistencias y Justificaciones</h2>
-                    <button className="btn" onClick={() => setActive(null)}>Volver</button>
+                    
                 </div>
 
                 {/* CONTADORES */}

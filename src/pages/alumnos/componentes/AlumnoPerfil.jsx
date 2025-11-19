@@ -1,214 +1,162 @@
-import React, { useEffect, useState } from "react";
-import "../../../styles/alumnos.css";   // ✔ Ruta corregida según tu estructura
-import { apiFetch } from "../../../lib/api";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  fetchAlumnoMe,
+  uploadAlumnoAvatar,
+  changeAlumnoPassword,
+} from "../../../lib/alumnos.api";
+
+const cap = (s = "") => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function AlumnoPerfil({ setActive }) {
   const [alumno, setAlumno] = useState(null);
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [passForm, setPassForm] = useState({
-    oldPass: "",
-    newPass: "",
-    confirmPass: "",
-  });
+  const [avatarSrc, setAvatarSrc] = useState("/alumno.jpg");
+  const fileRef = useRef(null);
 
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [pwd1, setPwd1] = useState("");
+  const [pwd2, setPwd2] = useState("");
 
-  // ============================
-  // 1) Cargar datos reales
-  // ============================
   useEffect(() => {
-    async function load() {
-      try {
-        const datos = await apiFetch("/api/alumnos/me/datos");
-
-        setAlumno(datos);
-
-        if (datos.avatarUrl) {
-          setAvatarUrl(datos.avatarUrl);
-        } else {
-          setAvatarUrl("/alumno.jpg"); // fallback por defecto
+    fetchAlumnoMe()
+      .then((data) => {
+        if (data) {
+          setAlumno(data);
+          setAvatarSrc(data.avatarUrl || "/alumno.jpg");
         }
-      } catch (err) {
-        console.error("Error cargando datos del alumno", err);
-      }
-    }
-    load();
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  if (!alumno) {
-    return (
-      <div className="panel-wrap">
-        <h2>Cargando perfil...</h2>
-      </div>
-    );
-  }
+  if (loading) return <p className="profile-wrap">Cargando…</p>;
+  if (!alumno) return <p>Error cargando datos</p>;
 
-  // ============================
-  // 2) Subir avatar real
-  // ============================
-  async function onAvatarChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  const displayName = `${cap(alumno.nombre)} ${cap(alumno.apellido)}`;
+  const email = alumno.email || "—";
+  const roles = alumno.rol ? [alumno.rol] : ["alumno"];
 
-    setMsg("");
+  // ----- AVATAR -----
+  const choosePhoto = () => fileRef.current?.click();
 
-    const formData = new FormData();
-    formData.append("avatar", file);
+  const onPhotoChange = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
 
-    try {
-      const res = await apiFetch("/api/alumnos/me/avatar", {
-        method: "POST",
-        body: formData,
-        isForm: true,
-      });
+    const reader = new FileReader();
+    reader.onload = () => setAvatarSrc(reader.result);
+    reader.readAsDataURL(f);
 
-      if (res?.avatarUrl) {
-        setAvatarUrl(res.avatarUrl);
-      }
-
-      setMsg("Avatar actualizado correctamente.");
-    } catch (err) {
-      console.error(err);
-      setMsg("Error al actualizar la foto.");
+    const updated = await uploadAlumnoAvatar(f);
+    if (updated?.data?.avatarUrl) {
+      setAlumno(updated.data);
+      setAvatarSrc(updated.data.avatarUrl);
     }
-  }
+  };
 
-  // ============================
-  // 3) Cambiar contraseña real
-  // ============================
-  async function onChangePassword() {
-    setMsg("");
+  // ----- PASSWORD -----
+  const savePassword = async (e) => {
+    e.preventDefault();
+    if (!pwd1 || !pwd2) return alert("Completá ambos campos.");
+    if (pwd1 !== pwd2) return alert("Las contraseñas no coinciden.");
 
-    if (!passForm.oldPass || !passForm.newPass || !passForm.confirmPass) {
-      setMsg("Completa todos los campos.");
-      return;
-    }
+    const res = await changeAlumnoPassword(pwd1);
+    if (res.ok) alert("Contraseña actualizada");
+    else alert("Error al actualizar contraseña");
 
-    if (passForm.newPass !== passForm.confirmPass) {
-      setMsg("Las contraseñas no coinciden.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await apiFetch("/api/alumnos/me/password", {
-        method: "POST",
-        body: {
-          oldPassword: passForm.oldPass,
-          newPassword: passForm.newPass,
-        },
-      });
-
-      if (res?.ok) {
-        setMsg("Contraseña actualizada correctamente.");
-        setPassForm({ oldPass: "", newPass: "", confirmPass: "" });
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg("Error al cambiar la contraseña.");
-    } finally {
-      setLoading(false);
-    }
-  }
+    setShowPwd(false);
+    setPwd1("");
+    setPwd2("");
+  };
 
   return (
-    <div className="panel-wrap">
-      <div className="profile-grid">
+    <div className="profile-wrap">
+      <div className="profile-card enroll-card">
+        <div className="enroll-header">
+          <h2 className="enroll-title">Mi Perfil</h2>
+          
+        </div>
 
-        {/* ============================
-            FOTO DEL ALUMNO
-        ============================ */}
-        <div className="profile-left">
-          <h2 className="profile-title">Mi Perfil</h2>
-
-          <div className="profile-avatar-box">
+        <div className="profile-grid">
+          <div className="profile-col profile-col--avatar">
             <img
-              src={avatarUrl}
-              alt="Avatar"
-              className="profile-avatar"
+              src={avatarSrc}
+              alt={displayName}
+              className="profile-avatar-lg"
             />
 
-            <label className="btn small" style={{ marginTop: "12px" }}>
-              Cambiar foto
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={onAvatarChange}
-              />
-            </label>
-          </div>
-        </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              onChange={onPhotoChange}
+              hidden
+            />
 
-        {/* ============================
-             DATOS PERSONALES
-        ============================ */}
-        <div className="profile-center">
-          <h3 className="section-title">Datos personales</h3>
-
-          <div className="profile-data">
-            <p><strong>Nombre:</strong> {alumno.nombre}</p>
-            <p><strong>Apellido:</strong> {alumno.apellido}</p>
-            <p><strong>DNI:</strong> {alumno.dni}</p>
-            <p><strong>Email:</strong> {alumno.email}</p>
-            <p><strong>Teléfono:</strong> {alumno.telefono || "No registrado"}</p>
+            <button className="btn btn--success" onClick={choosePhoto}>
+              Cambiar foto de perfil
+            </button>
           </div>
 
-          <button className="btn" onClick={() => setActive(null)}>
-            Volver
-          </button>
-        </div>
+          <div className="profile-col profile-col--info">
+            <h3 className="profile-name">{displayName}</h3>
+            <div className="profile-email">{email}</div>
 
-        {/* ============================
-            CAMBIAR CONTRASEÑA
-        ============================ */}
-        <div className="profile-right">
-          <h3 className="section-title">Cambiar contraseña</h3>
+            {!showPwd ? (
+              <div className="mt-16">
+                <button
+                  className="btn btn--danger"
+                  onClick={() => setShowPwd(true)}
+                >
+                  Cambiar contraseña
+                </button>
+              </div>
+            ) : (
+              <form className="pwd-form" onSubmit={savePassword}>
+                <input
+                  type="password"
+                  className="grades-input"
+                  placeholder="Nueva contraseña"
+                  value={pwd1}
+                  onChange={(e) => setPwd1(e.target.value)}
+                />
+                <input
+                  type="password"
+                  className="grades-input"
+                  placeholder="Repetir contraseña"
+                  value={pwd2}
+                  onChange={(e) => setPwd2(e.target.value)}
+                />
+                <div className="row gap-12">
+                  <button className="btn btn--success" type="submit">
+                    Guardar
+                  </button>
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => {
+                      setShowPwd(false);
+                      setPwd1("");
+                      setPwd2("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
 
-          <input
-            type="password"
-            placeholder="Contraseña actual"
-            value={passForm.oldPass}
-            onChange={(e) =>
-              setPassForm({ ...passForm, oldPass: e.target.value })
-            }
-            className="input"
-          />
-
-          <input
-            type="password"
-            placeholder="Nueva contraseña"
-            value={passForm.newPass}
-            onChange={(e) =>
-              setPassForm({ ...passForm, newPass: e.target.value })
-            }
-            className="input"
-          />
-
-          <input
-            type="password"
-            placeholder="Confirmar nueva"
-            value={passForm.confirmPass}
-            onChange={(e) =>
-              setPassForm({ ...passForm, confirmPass: e.target.value })
-            }
-            className="input"
-          />
-
-          <button
-            className="btn"
-            disabled={loading}
-            onClick={onChangePassword}
-          >
-            {loading ? "Guardando..." : "Actualizar contraseña"}
-          </button>
+          <div className="profile-col profile-col--roles">
+            <h4 className="profile-subtitle">Roles</h4>
+            <ul className="profile-roles">
+              {roles.map((r) => (
+                <li key={r}>{cap(r)}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-
-      {msg && <p className="msg">{msg}</p>}
     </div>
   );
 }

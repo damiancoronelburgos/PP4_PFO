@@ -118,9 +118,7 @@ export default function AlumnoHistorial({ setActive }) {
 
         {/* FOOTER */}
         <div className="historial-footer">
-          <button className="btn btn-success" onClick={() => window.print()}>
-            Descargar Certificado
-          </button>
+         
         </div>
 
       </div>

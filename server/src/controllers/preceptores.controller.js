@@ -54,13 +54,26 @@ function todayInBuenosAiresDate() {
   return new Date(isoDate + "T00:00:00Z");
 }
 
-function formatDateLocal(date) {
-  const d = date instanceof Date ? date : new Date(date);
+function formatDateLocal(value) {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return value.toISOString().slice(0, 10);
+  }
+
+  const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return d.toISOString().slice(0, 10);
 }
 
 function resolveAvatarDiskPath(avatarUrl) {
@@ -698,7 +711,7 @@ export async function getPreceptorEventosCalendario(req, res, next) {
     const rows = await prisma.$queryRaw`
       SELECT
         e.id AS id,
-        e.fecha AS fecha,
+        DATE_FORMAT(e.fecha, '%Y-%m-%d') AS fecha,
         e.titulo AS titulo,
         e.comision_id AS comisionId,
         c.codigo AS comisionCodigo,
@@ -725,11 +738,9 @@ export async function getPreceptorEventosCalendario(req, res, next) {
           ? Number(r.comisionId)
           : Number(r.comisionId);
 
-      const fechaStr = r.fecha ? formatDateLocal(r.fecha) : null;
-
       return {
         id: idNum,
-        fecha: fechaStr,
+        fecha: r.fecha,
         titulo: r.titulo,
         comisionId: comisionIdNum,
         comisionCodigo: r.comisionCodigo || null,

@@ -1,3 +1,4 @@
+//server/src/routes/alumnos.routes.js
 import { Router } from "express";
 import multer from "multer";
 import path from "node:path";
@@ -7,6 +8,7 @@ import prisma from "../db/prisma.js";
 import { auth, allowRoles } from "../middlewares/auth.js";
 import uploadAvatar from "../middlewares/uploadAvatar.js";
 import { updateUserAvatar, changeUserPassword } from "../services/userAccount.service.js";
+import { getAlumnoCalendario } from "../controllers/alumnoCalendario.controller.js";
 
 
 
@@ -397,5 +399,69 @@ r.post(
   allowRoles("alumno"),
   changeUserPassword
 );
+
+// ====================================================================
+// GET /api/alumnos/docentes
+// Lista de docentes visibles para los alumnos
+// ====================================================================
+r.get("/docentes", async (req, res) => {
+  try {
+    const docentes = await prisma.docentes.findMany({
+      select: {
+        id: true,
+        nombre: true,
+        apellido: true,
+        telefono: true,
+        email: true,
+        comisiones: {
+          select: {
+            materias: {
+              select: { nombre: true }
+            }
+          }
+        }
+      }
+    });
+
+    const lista = docentes.map((d) => ({
+      id: d.id,
+      nombre: d.nombre,
+      apellido: d.apellido,
+      email: d.email,
+      telefono: d.telefono,
+      materias: d.comisiones
+        .map((c) => c.materias?.nombre)
+        .filter(Boolean),
+    }));
+
+    return res.json(lista);
+  } catch (err) {
+    console.error("GET /api/alumnos/docentes error:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+// ====================================================================
+// GET /api/alumnos/calendario (USANDO CONTROLLER)
+// ====================================================================
+
+
+r.get("/calendario", getAlumnoCalendario);
+
+// GET /api/alumnos/instituto - Datos del instituto
+r.get("/instituto", async (req, res) => {
+  try {
+    const data = await prisma.instituto.findFirst();
+
+    if (!data) {
+      return res.status(404).json({ error: "No se encontró información del instituto" });
+    }
+
+    res.json(data);
+
+  } catch (err) {
+    console.error("Error cargando datos del instituto:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
 
 export default r;

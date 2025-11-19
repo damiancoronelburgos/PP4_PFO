@@ -1,116 +1,181 @@
-import React, { useEffect, useState } from "react";
-import "../../../styles/alumnos.css";
-import { apiFetch } from "../../../lib/api";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  fetchAlumnoDocentes,
+  fetchInstituto
+} from "../../../lib/alumnos.api";
 
 export default function AlumnoContacto({ setActive }) {
-  const [datos, setDatos] = useState(null);
+  const [docentes, setDocentes] = useState([]);
+  const [instituto, setInstituto] = useState(null);
+  const [filtro, setFiltro] = useState("");
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
 
-  // ================================
-  // Cargar datos de contacto
-  // ================================
-  async function cargarContacto() {
-    try {
-      setLoading(true);
-      const data = await apiFetch("/api/alumnos/contacto");
-      setDatos(data || {});
-    } catch (err) {
-      console.error(err);
-      setMsg("Error al cargar información de contacto.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  // ============================
+  // CARGAR DATOS DEL INSTITUTO + DOCENTES
+  // ============================
   useEffect(() => {
-    cargarContacto();
+    async function cargarTodo() {
+      try {
+        const [instData, docentesData] = await Promise.all([
+          fetchInstituto(),
+          fetchAlumnoDocentes()
+        ]);
+
+        setInstituto(instData || null);
+        setDocentes(docentesData || []);
+      } catch (err) {
+        console.error("Error cargando contacto:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    cargarTodo();
   }, []);
 
+  // ============================
+  // FILTRO
+  // ============================
+  const docentesFiltrados = useMemo(() => {
+    const f = filtro.toLowerCase().trim();
+    if (!f) return docentes;
+
+    return docentes.filter((d) =>
+      `${d.nombre} ${d.apellido}`.toLowerCase().includes(f) ||
+      d.email?.toLowerCase().includes(f) ||
+      d.telefono?.includes(f) ||
+      d.materias?.some((m) => m.toLowerCase().includes(f))
+    );
+  }, [filtro, docentes]);
+
+  // ============================
+  // LOADING
+  // ============================
   if (loading) {
     return (
-      <div className="panel-wrap">
-        <h2>Cargando información de contacto...</h2>
+      <div className="contacto-wrap">
+        <div className="contacto-card">
+          <h3 style={{ opacity: 0.7 }}>Cargando contactos...</h3>
+        </div>
       </div>
     );
   }
 
-  if (!datos) {
-    return (
-      <div className="panel-wrap">
-        <h2>No se pudo cargar la información.</h2>
-      </div>
-    );
-  }
-
-  const instit = datos.instituto;
-  const docentes = datos.docentes || [];
-
+  // ============================
+  // RENDER
+  // ============================
   return (
-    <div className="panel-wrap">
+    <div className="contacto-wrap">
 
-      {/* =============================
-            INFORMACIÓN DEL INSTITUTO
-      ============================== */}
-      <h2 className="profile-title">Contacto del Instituto</h2>
+      <div className="contacto-card">
 
-      <div className="panel-item">
-        <h3>{instit.nombre}</h3>
-        <p><strong>Dirección:</strong> {instit.direccion}</p>
-        <p><strong>Teléfono:</strong> {instit.telefono}</p>
-        <p><strong>Email:</strong> {instit.email}</p>
+        {/* HEADER */}
+        <div className="contacto-header">
+          <h2 className="contacto-title">Contacto</h2>
+        </div>
 
-        {instit.web && (
-          <p>
-            <strong>Sitio web:</strong>{" "}
-            <a className="link" href={instit.web} target="_blank">
-              {instit.web}
-            </a>
-          </p>
-        )}
-      </div>
+        {/* CAJA DE INSTITUTO */}
+        <section className="contacto-box">
+          <h3 className="contacto-sub">
+            {instituto?.nombre || "Instituto Superior Prisma"}
+          </h3>
 
-      {/* =============================
-            DOCENTES
-      ============================== */}
-      <h3 className="section-title">Docentes</h3>
+          <ul className="contacto-list">
+            {instituto?.direccion && (
+              <li>📍 Dirección: {instituto.direccion}</li>
+            )}
 
-      <div className="panel-list">
-        {docentes.length === 0 ? (
-          <p>No hay docentes registrados.</p>
-        ) : (
-          docentes.map((d) => (
-            <div key={d.id} className="panel-item">
-              <div className="item-header">
-                <h3>{d.nombre}</h3>
-                <span className="badge">{d.materias.length} materias</span>
-              </div>
+            {instituto?.telefono && (
+              <li>📞 Teléfono: {instituto.telefono}</li>
+            )}
 
-              <p>
-                <strong>Email:</strong>{" "}
-                <a className="link" href={`mailto:${d.email}`}>
-                  {d.email}
+            {instituto?.email_secretaria && (
+              <li>
+                ✉️ Secretaría:{" "}
+                <a className="mail-link" href={`mailto:${instituto.email_secretaria}`}>
+                  {instituto.email_secretaria}
                 </a>
-              </p>
+              </li>
+            )}
 
-              <p>
-                <strong>Teléfono:</strong> {d.telefono || "No registrado"}
-              </p>
+            {instituto?.email_soporte && (
+              <li>
+                🛠 Soporte:{" "}
+                <a className="mail-link" href={`mailto:${instituto.email_soporte}`}>
+                  {instituto.email_soporte}
+                </a>
+              </li>
+            )}
 
-              <p>
-                <strong>Materias:</strong> {d.materias.join(", ")}
-              </p>
-            </div>
-          ))
-        )}
+            {instituto?.sitio_web && (
+              <li>
+                🌐 Sitio Web:{" "}
+                <a
+                  href={instituto.sitio_web}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {instituto.sitio_web}
+                </a>
+              </li>
+            )}
+
+            {instituto?.horario && (
+              <li>⏰ Horarios: {instituto.horario}</li>
+            )}
+          </ul>
+        </section>
+
+        {/* BUSCADOR */}
+        <div className="contacto-search">
+          <input
+            className="notes-input"
+            placeholder="Buscar por docente, materia, comisión o email..."
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+          />
+        </div>
+
+        {/* TABLA DE DOCENTES */}
+        <section className="contacto-box">
+          <h3 className="contacto-sub">Docentes</h3>
+
+          <div className="tabla-scroll">
+            <table className="tabla-contacto">
+              <thead>
+                <tr>
+                  <th>Docente</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {docentesFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: "center", opacity: 0.6 }}>
+                      No se encontraron docentes.
+                    </td>
+                  </tr>
+                ) : (
+                  docentesFiltrados.map((d) => (
+                    <tr key={d.id}>
+                      <td>{d.nombre} {d.apellido}</td>
+                      <td>
+                        <a className="mail-link" href={`mailto:${d.email}`}>
+                          {d.email}
+                        </a>
+                      </td>
+                      <td>{d.telefono || "—"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
       </div>
-
-      {/* VOLVER */}
-      <button className="btn" onClick={() => setActive(null)}>
-        Volver
-      </button>
-
-      {msg && <p className="msg">{msg}</p>}
     </div>
   );
 }

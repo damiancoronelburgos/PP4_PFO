@@ -40,7 +40,7 @@ export default function CalendarioPanel({
         <div className="cal-header">
           <h2 className="cal-title">Calendario académico</h2>
           <div className="cal-nav">
-            <button className="btn" onClick={() => setActive(null)}>Volver</button>
+           
           </div>
         </div>
 

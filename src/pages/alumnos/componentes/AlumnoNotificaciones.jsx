@@ -191,9 +191,7 @@ export default function AlumnoNotificaciones({ setActive }) {
               </span>
             )}
 
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
+            
           </div>
         </div>
 

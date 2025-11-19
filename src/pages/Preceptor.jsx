@@ -36,12 +36,13 @@ import PreceptorNotificaciones from "./preceptor/PreceptorNotificaciones";
 import PreceptorPerfil from "./preceptor/PreceptorPerfil";
 
 // Constantes / utils
-const fmtFecha = (iso) =>
-  new Date(iso).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+const fmtFecha = (iso) => {
+  if (!iso) return "";
+  const s = String(iso).slice(0, 10); // YYYY-MM-DD
+  const [y, m, d] = s.split("-");
+  if (!y || !m || !d) return s;
+  return `${d}/${m}/${y}`;
+};
 
 const fmtFechaHora = (iso) =>
   new Date(iso).toLocaleString("es-AR", {
@@ -49,7 +50,12 @@ const fmtFechaHora = (iso) =>
     timeStyle: "short",
   });
 
-const ymd = (d) => d.toISOString().slice(0, 10);
+const ymd = (d) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const pad2 = (n) => String(n).padStart(2, "0");
 
 const capitalizeWords = (str) => {
@@ -568,14 +574,23 @@ export default function Preceptor() {
   );
 
   const eventosPorDia = useMemo(() => {
-    const m = new Map();
-    for (const e of eventosMes) {
-      const dia = Number(e.fecha.slice(-2));
-      if (!m.has(dia)) m.set(dia, []);
-      m.get(dia).push(e);
+    const map = new Map();
+
+    for (const ev of eventosCal || []) {
+      if (!ev.fecha) continue;
+      const [yStr, mStr, dStr] = ev.fecha.split("-");
+      const y = Number(yStr);
+      const m = Number(mStr) - 1;
+      const d = Number(dStr);
+
+      if (y === calYear && m === calMonth) {
+        if (!map.has(d)) map.set(d, []);
+        map.get(d).push(ev);
+      }
     }
-    return m;
-  }, [eventosMes]);
+
+    return map;
+  }, [eventosCal, calYear, calMonth]);
 
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstDow = new Date(calYear, calMonth, 1).getDay();

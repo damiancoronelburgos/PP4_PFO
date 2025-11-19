@@ -17,9 +17,7 @@ export default function Historial({
             <button className="btn btn-pdf" onClick={generarPDF}>
               Descargar Certificado (PDF)
             </button>
-            <button className="btn" onClick={() => setActive(null)}>
-              Volver
-            </button>
+            
           </div>
         </div>
 

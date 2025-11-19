@@ -73,9 +73,7 @@ export default function AlumnoInscripcion({ setActive }) {
         {/* HEADER */}
         <div className="enroll-header">
           <h2 className="enroll-title">Inscripción a Materias</h2>
-          <button className="btn" onClick={() => setActive(null)}>
-            Volver
-          </button>
+          
         </div>
 
         {/* COLUMNAS */}

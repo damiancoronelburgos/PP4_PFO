@@ -78,13 +78,7 @@ export default function Contacto({ setActive }) {
                 {/* HEADER */}
                 <div className="contacto-header">
                     <h2 className="contacto-title">Contacto</h2>
-                    {/* El botón 'Volver' no funciona aquí porque Contacto está dentro de AlumnoRender. 
-                       Si setActive no se pasa como prop, este botón debería ser revisado o eliminado. 
-                       Si el prop 'setActive' se usa para cambiar de pestaña en AlumnoRender, se mantiene. 
-                       Lo mantengo ya que se recibe como prop: */}
-                    <button className="btn" onClick={() => setActive(null)}>
-                        Volver
-                    </button> 
+                   
                 </div>
 
                 {/* INFO INSTITUCIONAL */}

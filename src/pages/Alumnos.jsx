@@ -1,116 +1,12 @@
-/*
-import React, { useState } from "react";
-
-// Componentes
-import AlumnoSidebar from "../components/AlumnoSidebar";
-
-// Vistas administrativas
-import GestionAlumnos from "./administrador/GestionAlumnos";
-import Constancias from "./administrador/Constancias";
-import ComuniocacionesAdmin from "./administrador/Comunicaciones";
-import Preceptor from "./Preceptor";
-
-// Vistas de alumno
-import Perfil from "./alumnos/Perfil";
-import Inscripcion from "./alumnos/Inscripcion";
-import Asistencias from "./alumnos/Asistencias";
-import Calificaciones from "./alumnos/Calificaciones";
-import Historial from "./alumnos/Historial";
-import Contacto from "./alumnos/Contacto";
-
-// Estilos
-import "../styles/alumnos.css";
-import "../styles/Administrador.css";
-
-export default function Alumnos() {
-  const [vistaActual, setVista] = useState("inicio");
-
-  const renderVista = () => {
-    switch (vistaActual) {
-      // === Vistas Administrativas ===
-      case "alumnos":
-        return <GestionAlumnos />;
-
-      case "constancias":
-        return <Constancias />;
-
-      case "notificaciones":
-        return <ComuniocacionesAdmin />;
-
-      // Calendario usando la vista principal de Preceptor
-      case "Calendario":
-        return <Preceptor />;
-
-      // === Vistas de Alumno ===
-      case "perfil":
-        return <Perfil />;
-
-      case "inscripcion":
-        return <Inscripcion />;
-
-      case "asistencias":
-        return <Asistencias />;
-
-      case "calificaciones":
-        return (
-          <Calificaciones
-            setActive={(view) => setVista(view || "inicio")}
-          />
-        );
-
-      case "historial":
-        return (
-          <Historial
-            setActive={(view) => setVista(view || "inicio")}
-            historial={[]}
-            generarPDF={() =>
-              alert(
-                "La descarga del historial en PDF aún no está implementada desde esta vista."
-              )
-            }
-          />
-        );
-
-      case "contacto":
-        return (
-          <Contacto
-            setActive={(view) => setVista(view || "inicio")}
-          />
-        );
-
-      default:
-        return (
-          <h3 className="bienvenida">
-            Seleccione una opción del menú
-          </h3>
-        );
-    }
-  };
-
-  return (
-    <div className="administrador-container" style={{ display: "flex" }}>
-      <AlumnoSidebar setVista={setVista} vistaActual={vistaActual} />
-
-      <div
-        className="administrador-content"
-        style={{ flex: 1, padding: "20px" }}
-      >
-        {renderVista()}
-      </div>
-    </div>
-  );
-}*/
-//src/pages/Alumnos.jsx
-// src/pages/Alumnos.jsx
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/alumnos.css";
 
-// === Datos locales para perfil / notificaciones ===
+// ==== Datos viejos solo para nombre visible ====
 import alumnosData from "../data/alumnos.json";
 import notificacionesData from "../data/notificaciones.json";
 
-// === Componentes ===
+// ==== Componentes ====
 import AlumnoPerfil from "./alumnos/componentes/AlumnoPerfil.jsx";
 import AlumnoInscripcion from "./alumnos/componentes/AlumnoInscripcion.jsx";
 import AlumnoCalificaciones from "./alumnos/componentes/AlumnoCalificaciones.jsx";
@@ -118,20 +14,25 @@ import AlumnoHistorial from "./alumnos/componentes/AlumnoHistorial.jsx";
 import AlumnoNotificaciones from "./alumnos/componentes/AlumnoNotificaciones.jsx";
 import AlumnoCalendario from "./alumnos/componentes/AlumnoCalendario.jsx";
 import AlumnoContacto from "./alumnos/componentes/AlumnoContacto.jsx";
-
-// ⭐ NUEVO COMPONENTE UNIFICADO
 import AlumnoAsistenciasYJustificaciones from "./alumnos/componentes/AlumnoAsistenciasYJustificaciones.jsx";
 
 export default function Alumnos() {
   const navigate = useNavigate();
-  const [active, setActive] = useState("perfil");
 
+  // ⭐ AHORA EMPIEZA EN null (no muestra ningún panel)
+  const [active, setActive] = useState(null);
+
+  // =====================================================================
+  // SOLO USAMOS JSON PARA MOSTRAR NOMBRE (TODO LO DEMÁS VIENE DEL BACK)
+  // =====================================================================
   const alumnoId = 1;
   const alumno = alumnosData.find((a) => a.id === alumnoId);
   const nombreCompleto =
     alumno ? `${alumno.nombre} ${alumno.apellido}` : "Alumno/a";
 
-  // =================== CONTADOR NOTIFICACIONES =====================
+  // =====================================================================
+  // CONTADOR DE NOTIFICACIONES DEL JSON (TEMPORAL)
+  // =====================================================================
   const unreadCount = useMemo(() => {
     const readRaw = localStorage.getItem(`notes_read_${alumnoId}`) || "[]";
     let readParsed = [];
@@ -151,11 +52,13 @@ export default function Alumnos() {
     }).length;
   }, []);
 
-  // =================== RENDERIZAR PANEL =====================
+  // =====================================================================
+  // PANEL DINÁMICO
+  // =====================================================================
   const renderPanel = () => {
     switch (active) {
       case "perfil":
-        return <AlumnoPerfil alumno={alumno} setActive={setActive} />;
+        return <AlumnoPerfil setActive={setActive} />;
 
       case "inscripcion":
         return <AlumnoInscripcion />;
@@ -171,9 +74,7 @@ export default function Alumnos() {
 
       case "asistencias":
         return (
-          <AlumnoAsistenciasYJustificaciones
-            setActive={setActive}
-          />
+          <AlumnoAsistenciasYJustificaciones setActive={setActive} />
         );
 
       case "calendario":
@@ -183,11 +84,13 @@ export default function Alumnos() {
         return <AlumnoContacto />;
 
       default:
-        return <AlumnoPerfil alumno={alumno} setActive={setActive} />;
+        return null; // ⭐ MUY IMPORTANTE: NO CARGAR PERFIL AUTOMÁTICAMENTE
     }
   };
 
-  // =================== ITEMS MENÚ =====================
+  // =====================================================================
+  // ITEMS DEL MENÚ
+  // =====================================================================
   const items = [
     { id: "inscripcion", label: "Inscripción a materias" },
     { id: "calificaciones", label: "Calificaciones" },
@@ -208,24 +111,41 @@ export default function Alumnos() {
       {/* ===================== SIDEBAR ===================== */}
       <aside className="sidebar">
         <div className="sidebar__inner">
-          {/* PERFIL */}
+
+          {/* PERFIL (SB-PROFILE) */}
           <div className="sb-profile">
+            {/* Engranaje que abre PERFIL */}
             <button
               className="sb-gear"
               onClick={() => setActive("perfil")}
+            >
+              <img
+                src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaXhoMTA2dGpuM28wcXNlY2pocTJzZWlsamdvcjhqeXk3OXlpam41aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/n7ZWr1Q6a49MTei2v1/giphy.gif"
+                alt="Config"
+              />
+            </button>
+
+            {/* Foto clickeable que abre PERFIL */}
+            <img
+              src="/alumno.jpg"
+              className="sb-avatar"
+              onClick={() => setActive("perfil")}
+              style={{ cursor: "pointer" }}
             />
-            <img src="/alumno.jpg" className="sb-avatar" />
+
             <p className="sb-role">Alumno/a</p>
             <p className="sb-name">{nombreCompleto}</p>
           </div>
 
-          {/* MENÚ */}
+          {/* ===================== MENÚ ===================== */}
           <div className="sb-menu">
             {items.map((it) => (
               <button
                 key={it.id}
                 onClick={() => setActive(it.id)}
-                className={"sb-item" + (active === it.id ? " is-active" : "")}
+                className={
+                  "sb-item" + (active === it.id ? " is-active" : "")
+                }
               >
                 <span className="sb-item__icon" />
                 <span className="sb-item__text">{it.label}</span>
@@ -237,7 +157,7 @@ export default function Alumnos() {
             ))}
           </div>
 
-          {/* CERRAR SESIÓN */}
+          {/* ===================== CERRAR SESIÓN ===================== */}
           <div className="sb-footer">
             <button className="sb-logout" onClick={() => navigate("/")}>
               <span>cerrar sesión</span>
@@ -255,7 +175,7 @@ export default function Alumnos() {
         <h1 className="brand__title">Instituto Superior Prisma</h1>
       </div>
 
-      {/* ===================== PANEL CONTENIDO ===================== */}
+      {/* ===================== PANEL PRINCIPAL ===================== */}
       <div className="panel-visor">{renderPanel()}</div>
     </div>
   );

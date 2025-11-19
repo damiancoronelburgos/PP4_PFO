@@ -1,34 +1,31 @@
-import { apiGet, apiPost, API_ORIGIN } from "./api";
+import {
+  apiGet,
+  apiPost,
+  apiPatch,
+  apiDelete,
+  API_ORIGIN,
+} from "./api";
 
-// Helpers
 function normalizeAvatarUrl(rawUrl) {
   if (!rawUrl) return null;
   if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
-
-  if (rawUrl.startsWith("/")) {
-    return `${API_ORIGIN}${rawUrl}`;
-  }
-
+  if (rawUrl.startsWith("/")) return `${API_ORIGIN}${rawUrl}`;
   return `${API_ORIGIN}/${rawUrl}`;
 }
 
-// Perfil / datos del alumno
+// ----- GET DATOS -----
 export async function fetchAlumnoMe() {
   try {
     const data = await apiGet("/api/alumnos/me/datos");
-
-    if (data && data.avatarUrl) {
-      data.avatarUrl = normalizeAvatarUrl(data.avatarUrl);
-    }
-
-    return data || null;
+    if (data?.avatarUrl) data.avatarUrl = normalizeAvatarUrl(data.avatarUrl);
+    return data;
   } catch (err) {
     console.error("fetchAlumnoMe error", err);
     return null;
   }
 }
 
-// Avatar
+// ----- AVATAR -----
 export async function uploadAlumnoAvatar(file) {
   const formData = new FormData();
   formData.append("avatar", file);
@@ -48,35 +45,34 @@ export async function uploadAlumnoAvatar(file) {
     const body = await res.json().catch(() => null);
 
     if (!res.ok) {
-      const msg = body && body.error ? body.error : `HTTP ${res.status}`;
-      return { ok: false, error: msg };
+      return { ok: false, error: body?.error || "Error al subir avatar" };
     }
 
-    if (body && body.avatarUrl) {
+    if (body?.avatarUrl) {
       body.avatarUrl = normalizeAvatarUrl(body.avatarUrl);
     }
 
     return { ok: true, data: body };
   } catch (err) {
     console.error("uploadAlumnoAvatar error", err);
-    return { ok: false, error: err.message || "Error al subir avatar" };
+    return { ok: false, error: err.message };
   }
 }
 
-// Contraseña
-export async function changeAlumnoPassword(payload) {
+// ----- PASSWORD -----
+export async function changeAlumnoPassword(newPassword) {
   try {
-    await apiPost("/api/alumnos/me/password", payload);
-    return { ok: true };
+    const res = await apiPost("/api/alumnos/me/password", {
+      password: newPassword,
+    });
+    return { ok: true, data: res };
   } catch (err) {
     console.error("changeAlumnoPassword error", err);
-    return {
-      ok: false,
-      error: err?.message || "No se pudo cambiar la contraseña.",
-    };
+    return { ok: false, error: err.message };
   }
 }
-// =================== NOTIFICACIONES (ALUMNO) ===================
+
+// ----- NOTIFICACIONES -----
 export async function fetchAlumnoNotificaciones() {
   try {
     const data = await apiGet("/api/alumnos/me/notificaciones");
@@ -87,36 +83,7 @@ export async function fetchAlumnoNotificaciones() {
   }
 }
 
-// PATCH: marcar leída / favorito
-export async function updateAlumnoNotificacion(id, fields = {}) {
-  if (!id) return null;
-  try {
-    const data = await apiPatch(
-      `/api/alumnos/me/notificaciones/${encodeURIComponent(id)}`,
-      fields
-    );
-    return data || null;
-  } catch (err) {
-    console.error("updateAlumnoNotificacion error", err);
-    return null;
-  }
-}
-
-// DELETE
-export async function deleteAlumnoNotificacion(id) {
-  if (!id) return false;
-  try {
-    await apiDelete(
-      `/api/alumnos/me/notificaciones/${encodeURIComponent(id)}`
-    );
-    return true;
-  } catch (err) {
-    console.error("deleteAlumnoNotificacion error", err);
-    return false;
-  }
-}
-
-// ASISTENCIAS
+// ----- ASISTENCIAS -----
 export async function fetchAlumnoAsistencias() {
   try {
     const data = await apiGet("/api/alumnos/me/asistencias");
@@ -127,7 +94,7 @@ export async function fetchAlumnoAsistencias() {
   }
 }
 
-// JUSTIFICACIONES
+// ----- JUSTIFICACIONES -----
 export async function fetchAlumnoJustificaciones() {
   try {
     const data = await apiGet("/api/alumnos/me/justificaciones");
@@ -146,4 +113,18 @@ export async function sendAlumnoJustificacion(formData) {
     console.error("sendAlumnoJustificacion error", err);
     return { ok: false, error: err.message };
   }
+}
+// ----- DOCENTES (contacto) -----
+export async function fetchAlumnoDocentes() {
+  try {
+    const data = await apiGet("/api/alumnos/docentes");
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("fetchAlumnoDocentes error", err);
+    return [];
+  }
+}
+// ----- INSTITUTO (contacto) -----
+export function fetchInstituto() {
+  return apiGet("/api/alumnos/instituto");
 }
