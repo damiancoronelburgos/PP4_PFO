@@ -149,6 +149,86 @@ r.get("/me/calificaciones", allowRoles("alumno"), async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+
+// ===============================
+// GET /api/alumnos/historial
+// Devuelve materias aprobadas del alumno (historial académico)
+// ===============================
+r.get("/historial", allowRoles("alumno"), async (req, res) => {
+  try {
+    const alumno = await prisma.alumnos.findFirst({
+      where: { usuario_id: req.user.sub },
+      select: { id: true },
+    });
+
+    if (!alumno) {
+      return res.status(404).json({ error: "Alumno no encontrado" });
+    }
+
+    const rows = await prisma.calificaciones.findMany({
+      where: { alumno_id: alumno.id },
+      include: {
+        comisiones: {
+          include: { materias: true },
+        },
+      },
+    });
+
+    const historial = rows
+      .map((row) => {
+        const estadoFinal =
+          row.estado ||
+          row.condicion ||
+          row.resultado ||
+          row.estado_final ||
+          null;
+
+        const esAprobado =
+          estadoFinal &&
+          ["aprobado", "Aprobado", "APROBADO"].includes(estadoFinal);
+
+        if (!esAprobado) return null;
+
+        const materiaNombre = row.comisiones?.materias?.nombre ?? "Sin materia";
+        const comisionNombre =
+          row.comisiones?.letra ??
+          row.comisiones?.codigo ??
+          "-";
+
+        const notaFinal =
+          row.nota_final ??
+          row.notaFinal ??
+          row.nota ??
+          null;
+
+        const fechaRaw =
+          row.fecha ||
+          row.fecha_cierre ||
+          row.created_at ||
+          row.updated_at ||
+          null;
+
+        const fecha =
+          fechaRaw instanceof Date
+            ? fechaRaw.toISOString().slice(0, 10)
+            : fechaRaw || "";
+
+        return {
+          materia: materiaNombre,
+          comision: comisionNombre,
+          estado: estadoFinal || "aprobado",
+          notaFinal,
+          fecha,
+        };
+      })
+      .filter(Boolean);
+
+    return res.json(historial);
+  } catch (err) {
+    console.error("GET /api/alumnos/historial error:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
 // ===============================
 // GET /api/alumnos/me/notificaciones
 // ===============================
@@ -300,11 +380,10 @@ r.post(
 );
 
 // ===============================
-// POST /api/alumnos/inscribir
-// Crea una fila en inscripciones (alumno_id + comision_id)
-// El front manda { materiaId } pero lo usamos como ID de comisión
+// POST /api/alumnos/inscripciones
+// Crea una inscripción del alumno en una comisión
 // ===============================
-r.post("/inscribir", allowRoles("alumno"), async (req, res) => {
+r.post("/inscripciones", allowRoles("alumno"), async (req, res) => {
   try {
     const alumno = await prisma.alumnos.findFirst({
       where: { usuario_id: req.user.sub },
@@ -315,17 +394,18 @@ r.post("/inscribir", allowRoles("alumno"), async (req, res) => {
       return res.status(404).json({ error: "Alumno no encontrado" });
     }
 
-    const { materiaId } = req.body;
-    const comisionId = Number(materiaId);
+    const { comisionId, materiaId } = req.body;
+    const rawId = comisionId ?? materiaId; // compatibilidad si algún día viene materiaId
+    const comisionIdNum = Number(rawId);
 
-    if (!comisionId || Number.isNaN(comisionId)) {
+    if (!comisionIdNum || Number.isNaN(comisionIdNum)) {
       return res
         .status(400)
         .json({ error: "ID de comisión/materia inválido." });
     }
 
     const comision = await prisma.comisiones.findUnique({
-      where: { id: comisionId },
+      where: { id: comisionIdNum },
       include: { materias: true },
     });
 
@@ -336,7 +416,7 @@ r.post("/inscribir", allowRoles("alumno"), async (req, res) => {
     const yaInsc = await prisma.inscripciones.findFirst({
       where: {
         alumno_id: alumno.id,
-        comision_id: comisionId,
+        comision_id: comisionIdNum,
         estado: "activa",
       },
     });
@@ -350,13 +430,18 @@ r.post("/inscribir", allowRoles("alumno"), async (req, res) => {
     const nueva = await prisma.inscripciones.create({
       data: {
         alumno_id: alumno.id,
-        comision_id: comisionId,
+        comision_id: comisionIdNum,
+        estado: "activa",
       },
     });
 
-    return res.status(201).json(nueva);
+    return res.status(201).json({
+      ok: true,
+      id: nueva.id,
+      comisionId: comisionIdNum,
+    });
   } catch (err) {
-    console.error("POST /api/alumnos/inscribir error:", err);
+    console.error("POST /api/alumnos/inscripciones error:", err);
     return res
       .status(500)
       .json({ error: "Error al realizar la inscripción" });
@@ -461,6 +546,136 @@ r.get("/instituto", async (req, res) => {
   } catch (err) {
     console.error("Error cargando datos del instituto:", err);
     res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ===============================
+// GET /api/alumnos/oferta
+// Lista de comisiones disponibles para inscripción del alumno
+// (misma lógica base que /materias, pero con nombres pensados para el front nuevo)
+// ===============================
+r.get("/oferta", allowRoles("alumno"), async (req, res) => {
+  try {
+    const alumno = await prisma.alumnos.findFirst({
+      where: { usuario_id: req.user.sub },
+      select: { id: true },
+    });
+
+    if (!alumno) {
+      return res.status(404).json({ error: "Alumno no encontrado" });
+    }
+
+    const [comisiones, inscripciones] = await Promise.all([
+      prisma.comisiones.findMany({
+        include: { materias: true },
+        orderBy: [
+          { materias: { nombre: "asc" } },
+          { letra: "asc" },
+        ],
+      }),
+      prisma.inscripciones.findMany({
+        where: { alumno_id: alumno.id, estado: "activa" },
+        select: { comision_id: true },
+      }),
+    ]);
+
+    const inscriptasSet = new Set(inscripciones.map((i) => i.comision_id));
+
+    const resultado = comisiones.map((c) => {
+      const nombreMateria = c.materias?.nombre ?? "Sin materia";
+
+      return {
+        id: c.id,                        // ID de la comisión
+        nombre: nombreMateria,          // por compatibilidad
+        materiaNombre: nombreMateria,   // lo que usa el front nuevo
+        comision: c.letra ?? c.codigo,
+        horario: c.horario ?? "",
+        cupo: c.cupo != null ? Number(c.cupo) : null,
+        inscripto: inscriptasSet.has(c.id),
+      };
+    });
+
+    return res.json(resultado);
+  } catch (err) {
+    console.error("GET /api/alumnos/oferta error:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ===============================
+// GET /api/alumnos/inscripciones
+// Devuelve las inscripciones activas del alumno logueado
+// ===============================
+r.get("/inscripciones", allowRoles("alumno"), async (req, res) => {
+  try {
+    const alumno = await prisma.alumnos.findFirst({
+      where: { usuario_id: req.user.sub },
+      select: { id: true },
+    });
+
+    if (!alumno) {
+      return res.status(404).json({ error: "Alumno no encontrado" });
+    }
+
+    const inscripciones = await prisma.inscripciones.findMany({
+      where: { alumno_id: alumno.id, estado: "activa" },
+      select: {
+        id: true,
+        comision_id: true,
+      },
+      orderBy: { id: "asc" },
+    });
+
+    const out = inscripciones.map((i) => ({
+      id: i.id,
+      comisionId:
+        typeof i.comision_id === "bigint"
+          ? Number(i.comision_id)
+          : i.comision_id,
+    }));
+
+    return res.json(out);
+  } catch (err) {
+    console.error("GET /api/alumnos/inscripciones error:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ===============================
+// DELETE /api/alumnos/inscripciones/:comisionId
+// Elimina (o da de baja) la inscripción del alumno en esa comisión
+// ===============================
+r.delete("/inscripciones/:comisionId", allowRoles("alumno"), async (req, res) => {
+  try {
+    const alumno = await prisma.alumnos.findFirst({
+      where: { usuario_id: req.user.sub },
+      select: { id: true },
+    });
+
+    if (!alumno) {
+      return res.status(404).json({ error: "Alumno no encontrado" });
+    }
+
+    const comisionIdNum = Number(req.params.comisionId);
+
+    if (!comisionIdNum || Number.isNaN(comisionIdNum)) {
+      return res.status(400).json({ error: "ID de comisión inválido." });
+    }
+
+    // Si querés soft-delete, acá podrías hacer updateMany({ data: { estado: "baja" } })
+    await prisma.inscripciones.deleteMany({
+      where: {
+        alumno_id: alumno.id,
+        comision_id: comisionIdNum,
+      },
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/alumnos/inscripciones/:comisionId error:", err);
+    return res.status(500).json({
+      error: "Error al eliminar la inscripción",
+    });
   }
 });
 
