@@ -220,7 +220,7 @@ const Constancias = () => {
                 type="text"
                 id="nombre-alumno"
                 className="input-form medio"
-                value={alumnoEncontrado ? alumnoEncontrado.nombre : ""}
+                value={alumnoEncontrado?.nombre ?? ""}
                 disabled
               />
             </div>
@@ -232,7 +232,7 @@ const Constancias = () => {
                 type="text"
                 id="apellido-alumno"
                 className="input-form medio"
-                value={alumnoEncontrado ? alumnoEncontrado.apellido : ""}
+                value={alumnoEncontrado?.apellido ?? ""}
                 disabled
               />
             </div>
@@ -249,7 +249,7 @@ const Constancias = () => {
                 id="carrera-alumno"
                 className="input-form medio"
                 // Muestra el nombre de la materia (curso)
-                value={alumnoEncontrado ? alumnoEncontrado.nombre_materia : ""}
+                value={alumnoEncontrado?.nombre_materia ?? ""}
                 disabled
               />
             </div>
@@ -262,7 +262,7 @@ const Constancias = () => {
                 id="comision-alumno"
                 className="input-form medio"
                 // Muestra el nombre/letra de la comisión
-                value={alumnoEncontrado ? alumnoEncontrado.nombre_comision : ""}
+                value={alumnoEncontrado?.nombre_comision ?? ""}
                 disabled
               />
             </div>
