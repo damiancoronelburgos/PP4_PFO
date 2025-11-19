@@ -27,6 +27,7 @@ const Constancias = () => {
   useEffect(() => {
     const fetchAlumnos = async () => {
       try {
+        // La API /alumnos debe devolver ahora nombre_materia y nombre_comision
         const data = await apiGet("/alumnos"); // GET /api/alumnos
         setAlumnos(data);
       } catch (err) {
@@ -64,13 +65,18 @@ const Constancias = () => {
   // Generación de PDF (incluye llamada a la API para historial)
   const handleEmitir = async () => {
     if (!alumnoEncontrado || formData.tipoConstancia === TIPOS_CONSTANCIA[0]) {
-      alert("Verifique que haya un alumno y un tipo de constancia seleccionados.");
+      alert(
+        "Verifique que haya un alumno y un tipo de constancia seleccionados."
+      );
       return;
     }
 
     const doc = new jsPDF();
     const tipo = formData.tipoConstancia;
     const nombreAlumno = `${alumnoEncontrado.nombre} ${alumnoEncontrado.apellido}`;
+    // Datos de materia y comisión (ya disponibles en alumnoEncontrado)
+    const nombreMateria = alumnoEncontrado.nombre_materia;
+    const nombreComision = alumnoEncontrado.nombre_comision;
 
     const logo = "/Logo.png";
     const firma = "/firma.png";
@@ -89,13 +95,19 @@ const Constancias = () => {
     doc.setFontSize(11);
 
     let contentStart = 40;
-    let filename = `${alumnoEncontrado.apellido}_${tipo.replace(/\s/g, "_")}.pdf`;
+    let filename = `${alumnoEncontrado.apellido}_${tipo.replace(
+      /\s/g,
+      "_"
+    )}.pdf`;
 
     if (tipo === "Historial académico") {
       // Historial académico: se trae de la API
       let historialData = [];
       try {
-        historialData = await apiGet(`/constancias/historial/${alumnoEncontrado.id}`);
+        // Asegúrate que esta ruta exista y devuelva la información del historial
+        historialData = await apiGet(
+          `/constancias/historial/${alumnoEncontrado.id}`
+        );
         if (!Array.isArray(historialData) || historialData.length === 0) {
           alert(
             "El alumno no tiene registros académicos (inscripciones) para mostrar."
@@ -108,13 +120,15 @@ const Constancias = () => {
         return;
       }
 
-      const textoHistorial = `El presente certificado acredita que el/la alumna/o ${nombreAlumno} ha cursado y/o aprobado las asignaturas detalladas a continuación, conforme a los registros académicos del Instituto Superior Prisma.`;
+      const textoHistorial = `El presente certificado acredita que el/la alumna/o ${nombreAlumno} (DNI N° ${alumnoEncontrado.dni}), cursante de la carrera ${nombreMateria} de la comisión ${nombreComision}, ha cursado y/o aprobado las asignaturas detalladas a continuación, conforme a los registros académicos del Instituto Superior Prisma.`;
+      
+      // Ajuste de posición y texto
       doc.text(textoHistorial, 15, contentStart, { maxWidth: 180 });
-      contentStart += 10;
+      contentStart += 15;
 
       autoTable(doc, {
         head: [["Materia", "Comisión", "Nota Final", "Fecha Insc.", "Estado"]],
-        body: historialData,
+        body: historialData, // Se espera que historialData sea el array de arrays o de objetos para autoTable
         startY: contentStart + 5,
         theme: "grid",
         headStyles: {
@@ -129,7 +143,8 @@ const Constancias = () => {
       filename = `Historial_${alumnoEncontrado.apellido}.pdf`;
     } else {
       // Otros tipos de constancia
-      const cursoTexto = "del Instituto Superior Prisma"; // sin campo curso real en la DB
+      // CORREGIDO: Usar los nuevos campos de materia y comisión en el texto del certificado
+      const cursoTexto = `de la carrera/curso ${nombreMateria}, comisión ${nombreComision}`;
       const textoCertificado = `El presente certificado acredita que el/la alumno/a ${nombreAlumno}, identificado/a con DNI N° ${alumnoEncontrado.dni}, es ${tipo.toLowerCase()} ${cursoTexto}.`;
 
       doc.text(textoCertificado, 15, contentStart, { maxWidth: 180 });
@@ -223,7 +238,7 @@ const Constancias = () => {
             </div>
           </div>
 
-          {/* Carrera y comisión (placeholder, sin datos reales de curso/comisión) */}
+          {/* Carrera y comisión (CORREGIDO en la interfaz) */}
           <div className="campos-fila">
             <div>
               <label htmlFor="carrera-alumno" className="label-form">
@@ -233,7 +248,8 @@ const Constancias = () => {
                 type="text"
                 id="carrera-alumno"
                 className="input-form medio"
-                value={alumnoEncontrado ? "No especificado" : ""}
+                // Muestra el nombre de la materia (curso)
+                value={alumnoEncontrado ? alumnoEncontrado.nombre_materia : ""}
                 disabled
               />
             </div>
@@ -245,7 +261,8 @@ const Constancias = () => {
                 type="text"
                 id="comision-alumno"
                 className="input-form medio"
-                value={alumnoEncontrado ? "No especificada" : ""}
+                // Muestra el nombre/letra de la comisión
+                value={alumnoEncontrado ? alumnoEncontrado.nombre_comision : ""}
                 disabled
               />
             </div>
@@ -271,7 +288,7 @@ const Constancias = () => {
             </select>
           </div>
 
-          {/* Resumen + botón emitir */}
+          {/* Resumen + botón emitir (CORREGIDO en el resumen) */}
           <div className="bloque-resumen">
             <div className="datos-resumen">
               <p>
@@ -281,8 +298,14 @@ const Constancias = () => {
                   : "---"}
               </p>
               <p>
+                {/* Ahora muestra el nombre de la materia */}
                 <strong>Curso:</strong>{" "}
-                {alumnoEncontrado ? "No especificado" : "---"}
+                {alumnoEncontrado ? alumnoEncontrado.nombre_materia : "---"}
+              </p>
+              <p>
+                {/* Ahora muestra el nombre de la comisión */}
+                <strong>Comisión:</strong>{" "}
+                {alumnoEncontrado ? alumnoEncontrado.nombre_comision : "---"}
               </p>
               <p>
                 <strong>DNI:</strong>{" "}

@@ -1,245 +1,240 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model roles {
-  id       Int        @id @default(autoincrement())
-  nombre   String     @unique
-  usuarios usuarios[]
+  id       Int        @id @default(autoincrement())
+  nombre   String     @unique
+  usuarios usuarios[]
 }
 
 model usuarios {
-  id              Int              @id @default(autoincrement())
-  username        String           @unique
-  password_hash   String
-  rol_id          Int
+  id              Int              @id @default(autoincrement())
+  username        String           @unique
+  password_hash   String
+  rol_id          Int
 
-  administradores administradores?
-  alumno          alumnos?          // ← RELACIÓN 1:1 ÚNICA
-  docentes        docentes?
-  preceptores     preceptores?
-  notificaciones  notificaciones[]
+  administradores administradores?
+  alumno          alumnos?          // ← RELACIÓN 1:1 ÚNICA
+  docentes        docentes?
+  preceptores     preceptores?
+  notificaciones  notificaciones[]
 
-  rol roles @relation(fields: [rol_id], references: [id])
+  rol roles @relation(fields: [rol_id], references: [id])
 
-  @@index([rol_id])
+  @@index([rol_id])
 }
 
 model alumnos {
-  id              Int               @id
-  nombre          String
-  apellido        String
-  dni             String?           @unique
-  telefono        String?
-  email           String?
-  usuario_id      Int?              @unique   // ← 1:1 CON usuario
-  materia_id      Int?
-  comision_id     Int?
+  id              Int               @id
+  nombre          String
+  apellido        String
+  dni             String?           @unique
+  telefono        String?
+  email           String?
+  usuario_id      Int?              @unique   // ← 1:1 CON usuario
+  // Eliminado materia_id e comision_id - La relación se gestiona por 'inscripciones'
 
-  usuario         usuarios?     @relation(fields: [usuario_id], references: [id])
-  materias        materias?     @relation(fields: [materia_id], references: [id])
-  comisiones      comisiones?   @relation(fields: [comision_id], references: [id])
+  usuario         usuarios?     @relation(fields: [usuario_id], references: [id])
 
-  asistencias     asistencias[]
-  calificaciones  calificaciones[]
-  inscripciones   inscripciones[]
-  justificaciones justificaciones[]
+  asistencias     asistencias[]
+  calificaciones  calificaciones[]
+  inscripciones   inscripciones[] // ← Relación N:M a Comisiones
+  justificaciones justificaciones[]
 
-  @@index([materia_id])
-  @@index([usuario_id])
-  @@index([comision_id])
+  @@index([usuario_id])
 }
 
 model administradores {
-  id         Int       @id
-  nombre     String
-  usuario_id Int?      @unique
+  id         Int       @id
+  nombre     String
+  usuario_id Int?      @unique
 
-  usuarios   usuarios? @relation(fields: [usuario_id], references: [id])
+  usuarios   usuarios? @relation(fields: [usuario_id], references: [id])
 
-  @@index([usuario_id])
+  @@index([usuario_id])
 }
 
 model asistencias {
-  id          Int        @id @default(autoincrement())
-  fecha       DateTime
-  alumno_id   Int
-  comision_id Int
-  estado      String
+  id          Int        @id @default(autoincrement())
+  fecha       DateTime
+  alumno_id   Int
+  comision_id Int
+  estado      String
 
-  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
-  comisiones comisiones @relation(fields: [comision_id], references: [id])
+  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
+  comisiones comisiones @relation(fields: [comision_id], references: [id])
 
-  @@unique([fecha, alumno_id, comision_id])
-  @@index([alumno_id])
-  @@index([comision_id, fecha])
+  @@unique([fecha, alumno_id, comision_id])
+  @@index([alumno_id])
+  @@index([comision_id, fecha])
 }
 
 model calificaciones {
-  id           Int        @id @default(autoincrement())
-  alumno_id    Int
-  comision_id  Int
-  p1           Int?
-  p2           Int?
-  p3           Int?
-  estado       String?
-  observacion  String?
-  anio         Int?
-  cuatrimestre Int?
-  docente_id   Int?
+  id           Int        @id @default(autoincrement())
+  alumno_id    Int
+  comision_id  Int
+  p1           Int?
+  p2           Int?
+  p3           Int?
+  estado       String?
+  observacion  String?
+  anio         Int?
+  cuatrimestre Int?
+  docente_id   Int?
 
-  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
-  comisiones comisiones @relation(fields: [comision_id], references: [id])
-  docentes   docentes?  @relation(fields: [docente_id], references: [id])
+  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
+  comisiones comisiones @relation(fields: [comision_id], references: [id])
+  docentes   docentes?  @relation(fields: [docente_id], references: [id])
 
-  @@index([alumno_id, comision_id])
-  @@index([comision_id])
-  @@index([docente_id])
+  @@index([alumno_id, comision_id])
+  @@index([comision_id])
+  @@index([docente_id])
 }
 
 model comisiones {
-  id                 Int                  @id @default(autoincrement())
-  codigo             String               @unique
-  materia_id         Int
-  docente_id         Int?
-  letra              String?
-  horario            String?
-  cupo               Int?
-  sede               String?
-  aula               String?
+  id                 Int                  @id @default(autoincrement())
+  codigo             String               @unique
+  materia_id         Int
+  docente_id         Int?
+  letra              String?
+  horario            String?
+  cupo               Int?
+  sede               String?
+  aula               String?
 
-  alumnos            alumnos[]          // ← RELACIÓN INVERSA
-  asistencias        asistencias[]
-  calificaciones     calificaciones[]
-  docentes           docentes? @relation(fields: [docente_id], references: [id])
-  materias           materias  @relation(fields: [materia_id], references: [id])
-  eventos            eventos[]
-  inscripciones      inscripciones[]
-  justificaciones    justificaciones[]
-  preceptor_comision preceptor_comision[]
+  // Eliminado alumnos alumnos[]
+  asistencias        asistencias[]
+  calificaciones     calificaciones[]
+  docentes           docentes? @relation(fields: [docente_id], references: [id])
+  materias           materias  @relation(fields: [materia_id], references: [id])
+  eventos            eventos[]
+  inscripciones      inscripciones[] // ← Relación N:M a Alumnos
+  justificaciones    justificaciones[]
+  preceptor_comision preceptor_comision[]
 
-  @@index([docente_id])
-  @@index([materia_id])
+  @@index([docente_id])
+  @@index([materia_id])
 }
 
 model docentes {
-  id             Int              @id
-  nombre         String
-  apellido       String
-  telefono       String?
-  email          String?
-  usuario_id     Int?             @unique
+  id             Int              @id
+  nombre         String
+  apellido       String
+  telefono       String?
+  email          String?
+  usuario_id     Int?             @unique
 
-  comisiones     comisiones[]
-  calificaciones calificaciones[]
-  usuarios       usuarios? @relation(fields: [usuario_id], references: [id])
+  comisiones     comisiones[]
+  calificaciones calificaciones[]
+  usuarios       usuarios? @relation(fields: [usuario_id], references: [id])
 
-  @@index([usuario_id])
+  @@index([usuario_id])
 }
 
 model eventos {
-  id          Int      @id
-  fecha       DateTime
-  titulo      String
-  comision_id Int?
+  id          Int      @id
+  fecha       DateTime
+  titulo      String
+  comision_id Int?
 
-  comisiones comisiones? @relation(fields: [comision_id], references: [id])
+  comisiones comisiones? @relation(fields: [comision_id], references: [id])
 
-  @@index([comision_id])
+  @@index([comision_id])
 }
 
 model inscripciones {
-  id          Int        @id @default(autoincrement())
-  alumno_id   Int
-  comision_id Int
-  fecha_insc  DateTime   @default(now())
-  estado      String     @default("activa")
+  id          Int        @id @default(autoincrement())
+  alumno_id   Int
+  comision_id Int
+  fecha_insc  DateTime   @default(now())
+  estado      String     @default("activa")
 
-  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
-  comisiones comisiones @relation(fields: [comision_id], references: [id])
+  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
+  comisiones comisiones @relation(fields: [comision_id], references: [id])
 
-  @@unique([alumno_id, comision_id])
-  @@index([alumno_id, comision_id])
-  @@index([comision_id])
+  @@unique([alumno_id, comision_id])
+  @@index([alumno_id, comision_id])
+  @@index([comision_id])
 }
 
 model instituto {
-  id               Int    @id
-  nombre           String
-  direccion        String?
-  telefono         String?
-  email_secretaria String?
-  email_soporte    String?
-  web              String?
-  horarios         String?
+  id               Int    @id
+  nombre           String
+  direccion        String?
+  telefono         String?
+  email_secretaria String?
+  email_soporte    String?
+  web              String?
+  horarios         String?
 }
 
 model justificaciones {
-  id            Int        @id
-  alumno_id     Int
-  comision_id   Int
-  fecha         DateTime
-  motivo        String
-  estado        String     @default("pendiente")
-  documento_url String?
+  id            Int        @id
+  alumno_id     Int
+  comision_id   Int
+  fecha         DateTime
+  motivo        String
+  estado        String     @default("pendiente")
+  documento_url String?
 
-  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
-  comisiones comisiones @relation(fields: [comision_id], references: [id])
+  alumnos    alumnos    @relation(fields: [alumno_id], references: [id])
+  comisiones comisiones @relation(fields: [comision_id], references: [id])
 
-  @@index([alumno_id])
-  @@index([comision_id, fecha])
+  @@index([alumno_id])
+  @@index([comision_id, fecha])
 }
 
 model materias {
-  id         Int          @id @default(autoincrement())
-  codigo     String       @unique
-  nombre     String
+  id         Int          @id @default(autoincrement())
+  codigo     String       @unique
+  nombre     String
 
-  alumnos    alumnos[]     // ← inversa de materia_id
-  comisiones comisiones[]
+  // Eliminado alumnos alumnos[]
+  comisiones comisiones[]
 }
 
 model notificaciones {
-  id         Int       @id
-  destino    String
-  usuario_id Int?
-  fecha      DateTime
-  titulo     String
-  detalle    String?
-  tipo       String?
-  leida      Boolean   @default(false)
-  favorito   Boolean   @default(false)
-  link       String?
+  id         Int       @id
+  destino    String
+  usuario_id Int?
+  fecha      DateTime
+  titulo     String
+  detalle    String?
+  tipo       String?
+  leida      Boolean   @default(false)
+  favorito   Boolean   @default(false)
+  link       String?
 
-  usuarios usuarios? @relation(fields: [usuario_id], references: [id])
+  usuarios usuarios? @relation(fields: [usuario_id], references: [id])
 
-  @@index([usuario_id, fecha])
+  @@index([usuario_id, fecha])
 }
 
 model preceptor_comision {
-  preceptor_id Int
-  comision_id  Int
+  preceptor_id Int
+  comision_id  Int
 
-  preceptores preceptores @relation(fields: [preceptor_id], references: [id])
-  comisiones  comisiones  @relation(fields: [comision_id], references: [id])
+  preceptores preceptores @relation(fields: [preceptor_id], references: [id])
+  comisiones  comisiones  @relation(fields: [comision_id], references: [id])
 
-  @@id([preceptor_id, comision_id])
-  @@index([comision_id])
+  @@id([preceptor_id, comision_id])
+  @@index([comision_id])
 }
 
 model preceptores {
-  id                 Int                  @id
-  nombre             String
-  apellido           String
-  usuario_id         Int?                 @unique
+  id                 Int                  @id
+  nombre             String
+  apellido           String
+  usuario_id         Int?                 @unique
 
-  preceptor_comision preceptor_comision[]
-  usuarios           usuarios? @relation(fields: [usuario_id], references: [id])
+  preceptor_comision preceptor_comision[]
+  usuarios           usuarios? @relation(fields: [usuario_id], references: [id])
 
-  @@index([usuario_id])
+  @@index([usuario_id])
 }
