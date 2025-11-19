@@ -1,3 +1,4 @@
+//server/src/routes/alumnos.routes.js
 import { Router } from "express";
 import multer from "multer";
 import path from "node:path";
@@ -459,6 +460,22 @@ r.get("/calendario", async (req, res) => {
   } catch (err) {
     console.error("GET /api/alumnos/calendario error:", err);
     return res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+// GET /api/alumnos/instituto - Datos del instituto
+r.get("/instituto", async (req, res) => {
+  try {
+    const data = await prisma.instituto.findFirst();
+
+    if (!data) {
+      return res.status(404).json({ error: "No se encontró información del instituto" });
+    }
+
+    res.json(data);
+
+  } catch (err) {
+    console.error("Error cargando datos del instituto:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

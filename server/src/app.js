@@ -1,3 +1,4 @@
+//server/src/app.js
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -59,7 +60,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 
 // Alumnos (TODO lo del alumno va en ALUMNOS.ROUTES)
-app.use("/api/alumnos", alumnosRoutes);
+app.use("/api/alumnos", alumnosRoutes);app.use("/api/docentes", docentesRoutes);app.use("/api/docentes", docentesRoutes);app.use("/api/docentes", docentesRoutes);
 
 // Calificaciones
 app.use("/api/calificaciones", calificacionesRoutes);
@@ -81,9 +82,7 @@ app.use("/api/ofertaAcademica", ofertaAcademicaRoutes);
 // Notificaciones globales (ADMIN)
 app.use("/api/notificaciones", notificacionesRoutes);
 
-// =======================
-//  404 para /api
-// =======================
+// === ESTE 404 DEBE IR AL FINAL DEL ARCHIVO ===
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found" });
 });

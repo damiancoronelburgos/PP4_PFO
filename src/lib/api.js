@@ -33,29 +33,26 @@ function authHeader() {
 }
 
 async function handleResponse(res) {
-  const ct = res.headers.get("content-type") || "";
-  const isJson = ct.includes("application/json");
-  const body = isJson
-    ? await res.json().catch(() => null)
-    : await res.text().catch(() => null);
+  // Si la respuesta es 204 No Content
+  if (res.status === 204) return null;
 
-  if (!res.ok) {
-    if (res.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("authToken");
-    }
+  let json = {};
 
-    const msg =
-      body && typeof body === "object" && body.error
-        ? body.error
-        : typeof body === "string" && body
-        ? body
-        : `HTTP ${res.status}`;
-
-    throw new Error(msg);
+  try {
+    // Intentar leer el JSON SIEMPRE
+    json = await res.json();
+  } catch (err) {
+    // Si no hay body, usamos un objeto vacío
+    json = {};
   }
 
-  return body;
+  // Si NO es ok y tampoco es 304, es un error real
+  if (!res.ok && res.status !== 304) {
+    throw new Error(json.error || "Error");
+  }
+
+  // Si es 304, devolvemos lo que tengamos (aunque sea {})
+  return json;
 }
 
 // ===== API básica (JSON) =====

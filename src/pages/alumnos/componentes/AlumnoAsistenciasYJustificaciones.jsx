@@ -1,3 +1,4 @@
+//src/pages/alumnos/componentes/AlumnoAsistenciasYJustificaciones.jsx
 import React, { useEffect, useState } from "react";
 import "../../../styles/alumnos.css";
 import {

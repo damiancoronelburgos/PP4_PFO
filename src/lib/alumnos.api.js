@@ -124,3 +124,7 @@ export async function fetchAlumnoDocentes() {
     return [];
   }
 }
+// ----- INSTITUTO (contacto) -----
+export function fetchInstituto() {
+  return apiGet("/api/alumnos/instituto");
+}
