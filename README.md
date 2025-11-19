@@ -172,6 +172,57 @@ El frontend se ejecutará en un puerto tipo `http://localhost:5173`.
 
 ---
 
+## Pruebas (frontend)
+
+El frontend cuenta con pruebas automatizadas sobre las vistas principales de **Docente** y **Preceptor**.
+
+### Frameworks utilizados
+
+* [Vitest](https://vitest.dev/) – runner de pruebas
+* [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) – pruebas de componentes React
+
+Los scripts de prueba están definidos en `package.json` en la raíz del repo:
+
+```json
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "test": "vitest",
+  "test:ui": "vitest --ui"
+}
+```
+
+### Ejecutar pruebas
+
+Desde la raíz del proyecto:
+
+```bash
+npm install      # si es la primera vez
+npm test         # ejecuta todas las pruebas en modo consola
+```
+
+### Cobertura actual de pruebas
+
+Las pruebas actuales cubren, entre otras:
+
+* **Docente**
+
+  * `CargarNotas`: render de alumnos iniciales y lógica de búsqueda/filtrado.
+  * `Asistencia`: marcado masivo de presentes y desmarcado.
+  * `Acta`: guardado de acta y confirmación.
+  * `Notificaciones`: marcado de favoritas y filtro de notificaciones.
+
+* **Preceptor**
+
+  * `PreceptorAsistencia`: cambio de estado de asistencia por alumno.
+  * `PreceptorNotificaciones`: filtros y favoritos.
+  * `PreceptorPerfil`: cambio de contraseña y actualización de datos básicos.
+
+El comando `npm test` muestra en consola el resumen de suites y tests ejecutados, indicando cuáles pasan y si se produce algún fallo.
+
+
 ## Usuarios de prueba
 
 En el estado actual, solo se puede ingresar con usuarios precargados en la tabla `usuarios`.  

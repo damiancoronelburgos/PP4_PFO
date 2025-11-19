@@ -13,6 +13,18 @@ export default function Asistencia() {
     );
   };
 
+  const todosPresentes = alumnos.every((a) => a.estado === "P");
+
+  const toggleMarcarTodos = () => {
+    if (todosPresentes) {
+      // Si ya todos están presentes, limpiar los estados
+      setAlumnos((prev) => prev.map((a) => ({ ...a, estado: "" })));
+    } else {
+      // Si no, marcarlos todos como presentes
+      setAlumnos((prev) => prev.map((a) => ({ ...a, estado: "P" })));
+    }
+  };
+
   const handleGuardar = () => {
     console.log("Asistencia guardada:", alumnos);
     alert("Asistencia registrada correctamente.");
@@ -57,9 +69,14 @@ export default function Asistencia() {
         </tbody>
       </table>
 
-      <div className="acciones-form">
+      <div className="acciones-form acciones-derecha">
         <button className="btn-guardar" onClick={handleGuardar}>
           Guardar
+        </button>
+        <button className={`btn-marcar-todos ${todosPresentes ? "modo-desmarcar" : "modo-marcar"}`} onClick={toggleMarcarTodos}>
+          {todosPresentes
+            ? "Desmarcar todos"
+            : "Marcar todos como presentes"}
         </button>
       </div>
     </div>
