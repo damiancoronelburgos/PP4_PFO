@@ -1,96 +1,238 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../../styles/docente.css";
+import { api } from "../../lib/api";
 
 export default function CargarNotas() {
-  const [comision, setComision] = useState("");
+  const [comisiones, setComisiones] = useState([]);
+  const [comisionId, setComisionId] = useState("");
+
+  // Datos iniciales de ejemplo (mock), para que la vista no quede vacía
   const [alumnos, setAlumnos] = useState([
-    { dni: "11111111", nombre: "GOMEZ, Nicolás", curso: "Java Estándar 17", nota: 7 },
-    { dni: "22222222", nombre: "LOPEZ, Manuel", curso: "Bases de Datos", nota: 5 },
-    { dni: "33333333", nombre: "MARTÍNEZ, Gimena", curso: "Machine Learning", nota: 8 },
-    { dni: "44444444", nombre: "PÉREZ, Fernanda", curso: "Intro a Python", nota: 9 },
+    {
+      alumnoId: 1,
+      dni: "11111111",
+      nombre: "GOMEZ, Nicolás",
+      curso: "Java Estándar 17",
+      nota: 7,
+    },
+    {
+      alumnoId: 2,
+      dni: "22222222",
+      nombre: "LOPEZ, Manuel",
+      curso: "Bases de Datos",
+      nota: 5,
+    },
+    {
+      alumnoId: 3,
+      dni: "33333333",
+      nombre: "MARTÍNEZ, Gimena",
+      curso: "Machine Learning",
+      nota: 8,
+    },
+    {
+      alumnoId: 4,
+      dni: "44444444",
+      nombre: "PÉREZ, Fernanda",
+      curso: "Intro a Python",
+      nota: 9,
+    },
   ]);
 
   const [busqueda, setBusqueda] = useState("");
+  const [filtro, setFiltro] = useState(""); // término de búsqueda aplicado
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleBuscar = () => {
-    if (busqueda.trim() === "") {
-      alert("Ingrese un DNI, nombre o curso para buscar");
+  // Cargar comisiones del docente al montar
+  useEffect(() => {
+  // En modo test no llamamos a la API real
+  if (import.meta.env.MODE === "test") return;
+
+  const loadComisiones = async () => {
+    try {
+      setErrorMsg("");
+      const data = await api.get("/docentes/me/comisiones");
+      setComisiones(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error cargando comisiones del docente:", err);
+      setErrorMsg("Error al cargar las comisiones del docente.");
+    }
+  };
+
+  loadComisiones();
+}, []);
+
+
+  // Cargar alumnos+notas cuando se elige una comisión
+  const loadAlumnos = async (id) => {
+    if (!id) {
+      setAlumnos([]);
       return;
     }
-    const resultados = alumnos.filter(
-      (a) =>
-        a.dni.includes(busqueda) ||
-        a.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        a.curso.toLowerCase().includes(busqueda.toLowerCase())
-    );
-    setAlumnos(resultados);
+
+    try {
+      setLoading(true);
+      setErrorMsg("");
+
+      const data = await api.get(
+        `/docentes/comisiones/${encodeURIComponent(
+          id
+        )}/alumnos-calificaciones`
+      );
+
+      const mapeados = (Array.isArray(data) ? data : []).map((row) => ({
+        alumnoId: row.alumnoId,
+        dni: row.dni,
+        nombre: row.nombre,
+        curso:
+          row.materiaNombre && row.comisionCodigo
+            ? `${row.materiaNombre} (${row.comisionCodigo})`
+            : row.comisionCodigo || row.materiaNombre || "",
+        nota: row.nota ?? "",
+      }));
+
+      setAlumnos(mapeados);
+    } catch (err) {
+      console.error("Error cargando alumnos de la comisión:", err);
+      setErrorMsg(
+        "Error al cargar los alumnos de la comisión. Verifique el backend."
+      );
+      // Si falla, dejamos los datos que hubiera (por ejemplo, los mock iniciales)
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleModificarNota = (dni, nuevaNota) => {
+  const handleChangeComision = (e) => {
+    const value = e.target.value;
+    setComisionId(value);
+    if (value) {
+      loadAlumnos(value);
+    } else {
+      setAlumnos([]);
+    }
+  };
+
+  const handleBuscar = () => {
+    setFiltro(busqueda.trim());
+  };
+
+  const handleChangeNota = (alumnoId, nuevaNota) => {
     setAlumnos((prev) =>
-      prev.map((a) => (a.dni === dni ? { ...a, nota: nuevaNota } : a))
+      prev.map((a) =>
+        a.alumnoId === alumnoId ? { ...a, nota: nuevaNota } : a
+      )
     );
   };
 
-  const handleGuardar = () => {
-    console.log("Notas guardadas:", alumnos);
-    alert("Notas guardadas correctamente.");
+  const handleGuardarNota = async (alumno) => {
+    if (!comisionId) {
+      alert("Primero seleccione una comisión.");
+      return;
+    }
+
+    try {
+      await api.post(
+        `/docentes/comisiones/${encodeURIComponent(
+          comisionId
+        )}/calificaciones`,
+        {
+          alumnoId: alumno.alumnoId,
+          nota: alumno.nota === "" ? null : Number(alumno.nota),
+        }
+      );
+
+      alert("Nota guardada correctamente.");
+    } catch (err) {
+      console.error("Error guardando la nota:", err);
+      alert("Error al guardar la nota.");
+    }
   };
+
+  const alumnosFiltrados = alumnos.filter((a) => {
+    if (!filtro) return true;
+    const term = filtro.toLowerCase();
+    return (
+      (a.dni || "").toLowerCase().includes(term) ||
+      (a.nombre || "").toLowerCase().includes(term) ||
+      (a.curso || "").toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="docente-vista">
       <h2 className="titulo-seccion">Cargar Notas</h2>
+
       <div className="filtros">
-        <select value={comision} onChange={(e) => setComision(e.target.value)}>
+        <select value={comisionId} onChange={handleChangeComision}>
           <option value="">Seleccione comisión</option>
-          <option value="Java Estándar 17">Java Estándar 17</option>
-          <option value="Bases de Datos">Bases de Datos</option>
-          <option value="Machine Learning">Machine Learning</option>
-          <option value="Intro a Python">Intro a Python</option>
+          {comisiones.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.materia?.nombre
+                ? `${c.materia.nombre} (${c.codigo})`
+                : c.codigo}
+            </option>
+          ))}
         </select>
+
         <input
           type="text"
           placeholder="DNI, Nombre o Curso"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
+
         <button onClick={handleBuscar}>Buscar</button>
       </div>
+
+      {errorMsg && <p className="mensaje-error">{errorMsg}</p>}
+      {loading && <p className="mensaje-info">Cargando alumnos...</p>}
 
       <table className="tabla-docente">
         <thead>
           <tr>
             <th>DNI</th>
             <th>Nombre</th>
-            <th>Curso</th>
+            <th>Curso / Comisión</th>
             <th>Nota</th>
             <th>Acción</th>
           </tr>
         </thead>
         <tbody>
-          {alumnos.map((a) => (
-            <tr key={a.dni}>
+          {alumnosFiltrados.map((a) => (
+            <tr key={`${a.alumnoId}-${a.dni}`}>
               <td>{a.dni}</td>
               <td>{a.nombre}</td>
               <td>{a.curso}</td>
               <td>
                 <input
                   type="number"
-                  min="1"
-                  max="10"
-                  value={a.nota}
+                  min={1}
+                  max={10}
+                  value={a.nota ?? ""}
                   onChange={(e) =>
-                    handleModificarNota(a.dni, Number(e.target.value))
+                    handleChangeNota(a.alumnoId, e.target.value)
                   }
                 />
               </td>
               <td>
-                <button className="btn-modificar" onClick={handleGuardar}>
+                <button
+                  className="btn-modificar"
+                  onClick={() => handleGuardarNota(a)}
+                >
                   Guardar
                 </button>
               </td>
             </tr>
           ))}
+
+          {alumnosFiltrados.length === 0 && !loading && (
+            <tr>
+              <td colSpan={5} style={{ textAlign: "center" }}>
+                No hay alumnos para mostrar.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
