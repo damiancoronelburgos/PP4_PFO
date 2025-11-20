@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/alumnos.css";
 
-// ==== Datos viejos solo para nombre visible ====
-import alumnosData from "../data/alumnos.json";
-import notificacionesData from "../data/notificaciones.json";
+import {
+  fetchAlumnoMe,
+  fetchAlumnoNotificaciones
+} from "../lib/alumnos.api";
 
 // ==== Componentes ====
 import AlumnoPerfil from "./alumnos/componentes/AlumnoPerfil.jsx";
@@ -19,78 +20,76 @@ import AlumnoAsistenciasYJustificaciones from "./alumnos/componentes/AlumnoAsist
 export default function Alumnos() {
   const navigate = useNavigate();
 
-  // ⭐ AHORA EMPIEZA EN null (no muestra ningún panel)
   const [active, setActive] = useState(null);
+  const [alumno, setAlumno] = useState(null);
+  const [alumnoId, setAlumnoId] = useState(null);
+  const [notificaciones, setNotificaciones] = useState([]);
 
-  // =====================================================================
-  // SOLO USAMOS JSON PARA MOSTRAR NOMBRE (TODO LO DEMÁS VIENE DEL BACK)
-  // =====================================================================
-  const alumnoId = 1;
-  const alumno = alumnosData.find((a) => a.id === alumnoId);
-  const nombreCompleto =
-    alumno ? `${alumno.nombre} ${alumno.apellido}` : "Alumno/a";
+  // ================================================================
+  // CARGAR DATOS DEL ALUMNO REAL
+  // ================================================================
+  useEffect(() => {
+    async function cargarDatos() {
+      const data = await fetchAlumnoMe();
+      if (data) {
+        setAlumno(data);
+        setAlumnoId(data.id);
+      }
 
-  // =====================================================================
-  // CONTADOR DE NOTIFICACIONES DEL JSON (TEMPORAL)
-  // =====================================================================
-  const unreadCount = useMemo(() => {
-    const readRaw = localStorage.getItem(`notes_read_${alumnoId}`) || "[]";
-    let readParsed = [];
-    try {
-      readParsed = JSON.parse(readRaw);
-    } catch {}
+      // Notificaciones REALES desde el backend
+      const notifs = await fetchAlumnoNotificaciones();
+      setNotificaciones(notifs);
+    }
 
-    const readSet = new Set(readParsed);
-
-    return notificacionesData.filter((n) => {
-      const visible =
-        n.destino === "todos" ||
-        (n.destino === "alumno" &&
-          (!n.usuarioId || n.usuarioId === alumnoId));
-
-      return visible && !readSet.has(n.id);
-    }).length;
+    cargarDatos();
   }, []);
 
-  // =====================================================================
-  // PANEL DINÁMICO
-  // =====================================================================
+  // ================================================================
+  // CONTADOR DE NOTIFICACIONES NO LEÍDAS
+  // ================================================================
+  const unreadCount = useMemo(() => {
+    return notificaciones.filter((n) => !n.leida).length;
+  }, [notificaciones]);
+
+  // ================================================================
+  // PANEL PRINCIPAL
+  // ================================================================
   const renderPanel = () => {
+    if (!alumnoId) return null; // Evita errores mientras carga
+
     switch (active) {
       case "perfil":
         return <AlumnoPerfil setActive={setActive} />;
 
       case "inscripcion":
-        return <AlumnoInscripcion />;
+        return <AlumnoInscripcion alumnoId={alumnoId} />;
 
       case "calificaciones":
-        return <AlumnoCalificaciones />;
+        return <AlumnoCalificaciones alumnoId={alumnoId} />;
 
       case "historial":
-        return <AlumnoHistorial setActive={setActive} />;
+        return <AlumnoHistorial alumnoId={alumnoId} setActive={setActive} />;
 
       case "notificaciones":
         return <AlumnoNotificaciones alumnoId={alumnoId} />;
 
       case "asistencias":
-        return (
-          <AlumnoAsistenciasYJustificaciones setActive={setActive} />
-        );
+        return <AlumnoAsistenciasYJustificaciones alumnoId={alumnoId} />;
 
       case "calendario":
-        return <AlumnoCalendario />;
+        return <AlumnoCalendario alumnoId={alumnoId} />;
 
       case "contacto":
-        return <AlumnoContacto />;
+        return <AlumnoContacto alumnoId={alumnoId} />;
 
       default:
-        return null; // ⭐ MUY IMPORTANTE: NO CARGAR PERFIL AUTOMÁTICAMENTE
+        return null;
     }
   };
 
-  // =====================================================================
-  // ITEMS DEL MENÚ
-  // =====================================================================
+  // ================================================================
+  // MENÚ
+  // ================================================================
   const items = [
     { id: "inscripcion", label: "Inscripción a materias" },
     { id: "calificaciones", label: "Calificaciones" },
@@ -100,6 +99,10 @@ export default function Alumnos() {
     { id: "calendario", label: "Calendario" },
     { id: "contacto", label: "Contacto" },
   ];
+
+  const nombreCompleto = alumno
+    ? `${alumno.nombre} ${alumno.apellido}`
+    : "Alumno/a";
 
   return (
     <div className="alumnos-page">
@@ -112,22 +115,17 @@ export default function Alumnos() {
       <aside className="sidebar">
         <div className="sidebar__inner">
 
-          {/* PERFIL (SB-PROFILE) */}
+          {/* PERFIL */}
           <div className="sb-profile">
-            {/* Engranaje que abre PERFIL */}
-            <button
-              className="sb-gear"
-              onClick={() => setActive("perfil")}
-            >
+            <button className="sb-gear" onClick={() => setActive("perfil")}>
               <img
                 src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaXhoMTA2dGpuM28wcXNlY2pocTJzZWlsamdvcjhqeXk3OXlpam41aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/n7ZWr1Q6a49MTei2v1/giphy.gif"
                 alt="Config"
               />
             </button>
 
-            {/* Foto clickeable que abre PERFIL */}
             <img
-              src="/alumno.jpg"
+              src={alumno?.avatarUrl || "/alumno.jpg"}
               className="sb-avatar"
               onClick={() => setActive("perfil")}
               style={{ cursor: "pointer" }}
@@ -137,15 +135,13 @@ export default function Alumnos() {
             <p className="sb-name">{nombreCompleto}</p>
           </div>
 
-          {/* ===================== MENÚ ===================== */}
+          {/* MENÚ */}
           <div className="sb-menu">
             {items.map((it) => (
               <button
                 key={it.id}
                 onClick={() => setActive(it.id)}
-                className={
-                  "sb-item" + (active === it.id ? " is-active" : "")
-                }
+                className={"sb-item" + (active === it.id ? " is-active" : "")}
               >
                 <span className="sb-item__icon" />
                 <span className="sb-item__text">{it.label}</span>
@@ -157,7 +153,7 @@ export default function Alumnos() {
             ))}
           </div>
 
-          {/* ===================== CERRAR SESIÓN ===================== */}
+          {/* CERRAR SESIÓN */}
           <div className="sb-footer">
             <button className="sb-logout" onClick={() => navigate("/")}>
               <span>cerrar sesión</span>
@@ -167,7 +163,7 @@ export default function Alumnos() {
         </div>
       </aside>
 
-      {/* ===================== LOGO ===================== */}
+      {/* LOGO */}
       <div className="brand">
         <div className="brand__circle">
           <img src="/Logo.png" className="brand__logo" />
@@ -175,7 +171,7 @@ export default function Alumnos() {
         <h1 className="brand__title">Instituto Superior Prisma</h1>
       </div>
 
-      {/* ===================== PANEL PRINCIPAL ===================== */}
+      {/* PANEL PRINCIPAL */}
       <div className="panel-visor">{renderPanel()}</div>
     </div>
   );

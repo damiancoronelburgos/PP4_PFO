@@ -195,11 +195,8 @@ r.get("/historial", allowRoles("alumno"), async (req, res) => {
           row.comisiones?.codigo ??
           "-";
 
-        const notaFinal =
-          row.nota_final ??
-          row.notaFinal ??
-          row.nota ??
-          null;
+      const notaFinal = row.p3 ?? null;
+
 
         const fechaRaw =
           row.fecha ||
@@ -208,10 +205,8 @@ r.get("/historial", allowRoles("alumno"), async (req, res) => {
           row.updated_at ||
           null;
 
-        const fecha =
-          fechaRaw instanceof Date
-            ? fechaRaw.toISOString().slice(0, 10)
-            : fechaRaw || "";
+        const fecha = row.anio ? row.anio.toString() : "";
+
 
         return {
           materia: materiaNombre,
