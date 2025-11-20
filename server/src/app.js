@@ -21,6 +21,8 @@ import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import calendarioDocenteRoutes from "./routes/calendarioDocente.routes.js";
 
 
+
+
 const app = express();
 
 // =======================
@@ -87,6 +89,9 @@ app.use("/api/ofertaAcademica", ofertaAcademicaRoutes);
 
 // Notificaciones globales (ADMIN)
 app.use("/api/notificaciones", notificacionesRoutes);
+
+
+
 
 // === ESTE 404 DEBE IR AL FINAL DEL ARCHIVO ===
 app.use("/api", (_req, res) => {
