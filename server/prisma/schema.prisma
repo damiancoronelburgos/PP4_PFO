@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =========================
+// MODELOS DE USUARIOS Y ROLES
+// =========================
+
 model roles {
   id       Int        @id @default(autoincrement())
   nombre   String     @unique(map: "nombre") @db.VarChar(50)
@@ -14,76 +18,86 @@ model roles {
 }
 
 model usuarios {
-  id              Int              @id @default(autoincrement())
-  username        String           @unique(map: "username") @db.VarChar(50)
-  password_hash   String           @db.VarChar(255)
+  id              Int               @id @default(autoincrement())
+  username        String            @unique(map: "username") @db.VarChar(50)
+  password_hash   String            @db.VarChar(255)
   rol_id          Int
-  avatar_url      String?          @db.VarChar(255)
+  avatar_url      String?           @db.VarChar(255)
+  
+  // Relaciones
+  rol             roles             @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuarios_rol")
   administradores administradores?
   alumno          alumnos?
   docentes        docentes?
-  notificaciones  notificaciones[]
   preceptores     preceptores?
-  rol             roles            @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuarios_rol")
+  notificaciones  notificaciones[]
 
   @@index([rol_id], map: "fk_usuarios_rol")
 }
 
+// =========================
+// MODELOS ACADÉMICOS PRINCIPALES
+// =========================
+
 model alumnos {
-  id              Int               @id
+  id              Int               @id @default(autoincrement()) // AGREGADO: autoincrement() para simplificar inserts
   nombre          String            @db.VarChar(100)
   apellido        String            @db.VarChar(100)
   dni             String?           @unique(map: "dni") @db.VarChar(20)
   telefono        String?           @db.VarChar(30)
-  email           String?           @db.VarChar(120)
+  email           String?           @db.VarChar(191) // Aumentado a 191 para estándar
   usuario_id      Int?              @unique(map: "usuario_id")
+  
   usuario         usuarios?         @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_alumno_user")
+  
+  // Relaciones
   asistencias     asistencias[]
   calificaciones  calificaciones[]
   inscripciones   inscripciones[]
   justificaciones justificaciones[]
 }
 
+model docentes {
+  id             Int              @id @default(autoincrement()) // Asegurado autoincrement
+  nombre         String           @db.VarChar(100)
+  apellido       String           @db.VarChar(100)
+  telefono       String?          @db.VarChar(30)
+  email          String?          @db.VarChar(191)
+  usuario_id     Int?             @unique(map: "usuario_id")
+  
+  usuario        usuarios?        @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_docente_user")
+  
+  calificaciones calificaciones[]
+  comisiones     comisiones[]
+}
+
+model preceptores {
+  id                 Int                  @id @default(autoincrement())
+  nombre             String               @db.VarChar(100)
+  apellido           String               @db.VarChar(100)
+  usuario_id         Int?                 @unique(map: "usuario_id")
+  
+  usuario            usuarios?            @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_preceptor_user")
+  preceptor_comision preceptor_comision[]
+}
+
 model administradores {
-  id         Int       @id
+  id         Int       @id @default(autoincrement())
   nombre     String    @db.VarChar(100)
   usuario_id Int?      @unique(map: "usuario_id")
+  
   usuarios   usuarios? @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admin_user")
 }
 
-model asistencias {
-  id          Int                @id @default(autoincrement())
-  fecha       DateTime           @db.Date
-  alumno_id   Int
-  comision_id Int
-  estado      asistencias_estado
-  alumnos     alumnos            @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_asist_alum")
-  comisiones  comisiones         @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_asist_com")
+// =========================
+// ESTRUCTURA CURRICULAR
+// =========================
 
-  @@unique([fecha, alumno_id, comision_id], map: "uq_asistencia")
-  @@index([alumno_id], map: "fk_asist_alum")
-  @@index([comision_id, fecha], map: "idx_asistencia_comision_fecha")
-}
-
-model calificaciones {
-  id           Int        @id @default(autoincrement())
-  alumno_id    Int
-  comision_id  Int
-  p1           Int?       @db.TinyInt
-  p2           Int?       @db.TinyInt
-  p3           Int?       @db.TinyInt
-  estado       String?    @db.VarChar(30)
-  observacion  String?    @db.VarChar(255)
-  anio         Int?       @db.SmallInt
-  cuatrimestre Int?       @db.TinyInt
-  docente_id   Int?
-  alumnos      alumnos    @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_calif_alum")
-  comisiones   comisiones @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_calif_com")
-  docentes     docentes?  @relation(fields: [docente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_calif_doc")
-
-  @@index([comision_id], map: "fk_calif_com")
-  @@index([docente_id], map: "fk_calif_doc")
-  @@index([alumno_id, comision_id], map: "idx_calif_alum_com")
+model materias {
+  id         Int          @id @default(autoincrement())
+  codigo     String       @unique(map: "codigo") @db.VarChar(50)
+  nombre     String       @db.VarChar(120)
+  comisiones comisiones[]
 }
 
 model comisiones {
@@ -96,10 +110,13 @@ model comisiones {
   cupo               Int?
   sede               String?              @db.VarChar(80)
   aula               String?              @db.VarChar(40)
+  
+  // Relaciones
+  materias           materias             @relation(fields: [materia_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_com_mat")
+  docentes           docentes?            @relation(fields: [docente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_com_doc")
+  
   asistencias        asistencias[]
   calificaciones     calificaciones[]
-  docentes           docentes?            @relation(fields: [docente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_com_doc")
-  materias           materias             @relation(fields: [materia_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_com_mat")
   eventos            eventos[]
   inscripciones      inscripciones[]
   justificaciones    justificaciones[]
@@ -109,34 +126,13 @@ model comisiones {
   @@index([materia_id], map: "fk_com_mat")
 }
 
-model docentes {
-  id             Int              @id
-  nombre         String           @db.VarChar(100)
-  apellido       String           @db.VarChar(100)
-  telefono       String?          @db.VarChar(30)
-  email          String?          @db.VarChar(120)
-  usuario_id     Int?             @unique(map: "usuario_id")
-  calificaciones calificaciones[]
-  comisiones     comisiones[]
-  usuarios       usuarios?        @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_docente_user")
-}
-
-model eventos {
-  id          Int         @id
-  fecha       DateTime    @db.Date
-  titulo      String      @db.VarChar(160)
-  comision_id Int?
-  comisiones  comisiones? @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_com")
-
-  @@index([comision_id], map: "fk_event_com")
-}
-
 model inscripciones {
   id          Int                   @id @default(autoincrement())
   alumno_id   Int
   comision_id Int
-  fecha_insc  DateTime?             @default(dbgenerated("(curdate())")) @db.Date
+  fecha_insc  DateTime?             @default(now()) @db.Date // CORREGIDO: @default(now()) es mejor práctica
   estado      inscripciones_estado? @default(activa)
+  
   alumnos     alumnos               @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_insc_alum")
   comisiones  comisiones            @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_insc_com")
 
@@ -146,15 +142,45 @@ model inscripciones {
   @@index([comision_id, estado], map: "idx_insc_com_estado")
 }
 
-model instituto {
-  id               Int     @id @db.TinyInt
-  nombre           String  @db.VarChar(160)
-  direccion        String? @db.VarChar(160)
-  telefono         String? @db.VarChar(40)
-  email_secretaria String? @db.VarChar(120)
-  email_soporte    String? @db.VarChar(120)
-  web              String? @db.VarChar(160)
-  horarios         String? @db.VarChar(120)
+// =========================
+// GESTIÓN ACADÉMICA (Diaria)
+// =========================
+
+model asistencias {
+  id          Int                @id @default(autoincrement())
+  fecha       DateTime           @db.Date
+  alumno_id   Int
+  comision_id Int
+  estado      asistencias_estado
+  
+  alumnos     alumnos            @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_asist_alum")
+  comisiones  comisiones         @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_asist_com")
+
+  @@unique([fecha, alumno_id, comision_id], map: "uq_asistencia")
+  @@index([alumno_id], map: "fk_asist_alum")
+  @@index([comision_id, fecha], map: "idx_asistencia_comision_fecha")
+}
+
+model calificaciones {
+  id           Int         @id @default(autoincrement())
+  alumno_id    Int
+  comision_id  Int
+  p1           Int?        @db.TinyInt
+  p2           Int?        @db.TinyInt
+  p3           Int?        @db.TinyInt
+  estado       String?     @db.VarChar(30)
+  observacion  String?     @db.VarChar(255)
+  anio         Int?        @db.SmallInt
+  cuatrimestre Int?        @db.TinyInt
+  docente_id   Int?
+  
+  alumnos      alumnos     @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_calif_alum")
+  comisiones   comisiones  @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_calif_com")
+  docentes     docentes?   @relation(fields: [docente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_calif_doc")
+
+  @@index([comision_id], map: "fk_calif_com")
+  @@index([docente_id], map: "fk_calif_doc")
+  @@index([alumno_id, comision_id], map: "idx_calif_alum_com")
 }
 
 model justificaciones {
@@ -165,6 +191,7 @@ model justificaciones {
   motivo        String                  @db.VarChar(255)
   estado        justificaciones_estado? @default(pendiente)
   documento_url String?                 @db.VarChar(255)
+  
   alumnos       alumnos                 @relation(fields: [alumno_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_j_alum")
   comisiones    comisiones              @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_j_com")
 
@@ -173,11 +200,19 @@ model justificaciones {
   @@index([comision_id, fecha], map: "idx_justif_com_fecha")
 }
 
-model materias {
-  id         Int          @id @default(autoincrement())
-  codigo     String       @unique(map: "codigo") @db.VarChar(50)
-  nombre     String       @db.VarChar(120)
-  comisiones comisiones[]
+// =========================
+// OTROS
+// =========================
+
+model eventos {
+  id          Int         @id @default(autoincrement()) // Asegurado autoincrement
+  fecha       DateTime    @db.Date
+  titulo      String      @db.VarChar(160)
+  comision_id Int?
+  
+  comisiones  comisiones? @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_com")
+
+  @@index([comision_id], map: "fk_event_com")
 }
 
 model notificaciones {
@@ -191,6 +226,7 @@ model notificaciones {
   leida      Boolean?               @default(false)
   favorito   Boolean?               @default(false)
   link       String?                @db.VarChar(255)
+  
   usuarios   usuarios?              @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_notif_user")
 
   @@index([usuario_id, fecha], map: "idx_notif_user_fecha")
@@ -199,6 +235,7 @@ model notificaciones {
 model preceptor_comision {
   preceptor_id Int
   comision_id  Int
+  
   comisiones   comisiones  @relation(fields: [comision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pc_c")
   preceptores  preceptores @relation(fields: [preceptor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pc_p")
 
@@ -206,14 +243,20 @@ model preceptor_comision {
   @@index([comision_id], map: "fk_pc_c")
 }
 
-model preceptores {
-  id                 Int                  @id
-  nombre             String               @db.VarChar(100)
-  apellido           String               @db.VarChar(100)
-  usuario_id         Int?                 @unique(map: "usuario_id")
-  preceptor_comision preceptor_comision[]
-  usuarios           usuarios?            @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_preceptor_user")
+model instituto {
+  id               Int     @id @db.TinyInt
+  nombre           String  @db.VarChar(160)
+  direccion        String? @db.VarChar(160)
+  telefono         String? @db.VarChar(40)
+  email_secretaria String? @db.VarChar(120)
+  email_soporte    String? @db.VarChar(120)
+  web              String? @db.VarChar(160)
+  horarios         String? @db.VarChar(120)
 }
+
+// =========================
+// ENUMS
+// =========================
 
 enum notificaciones_destino {
   todos
