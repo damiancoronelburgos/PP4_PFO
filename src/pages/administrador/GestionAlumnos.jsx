@@ -7,7 +7,7 @@ const initialFormState = {
   dni: "",
   nombre: "",
   apellido: "",
-  materia_id: 0,
+  materia_id: 0, // Se mantiene para el select y para la acción "modificar"
   telefono: "",
   email: "",
 };
@@ -27,10 +27,6 @@ const GestionAlumnos = () => {
       try {
         const data = await apiGet("/gestion/materias");
         setMateriasDisponibles(data);
-        if (data.length > 0) {
-          // Si hay materias, establece la primera como predeterminada
-          setFormData((prev) => ({ ...prev, materia_id: data[0].id }));
-        }
       } catch (err) {
         console.error("Error al cargar materias:", err);
       }
@@ -79,53 +75,44 @@ const GestionAlumnos = () => {
         apellido: alumno.apellido || "",
         telefono: alumno.telefono || "",
         email: alumno.email || "",
-        materia_id: materia ? materia.id : materiasDisponibles[0]?.id || 0,
+        materia_id: materia ? materia.id : 0, 
       });
       setAlumnoSeleccionado(alumno.id);
     } else {
       setFormData(initialFormState);
-      if (materiasDisponibles.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          // Se asegura de que materia_id sea un número para el select
-          materia_id: materiasDisponibles[0].id,
-        }));
-      }
       setAlumnoSeleccionado(null);
     }
   };
 
   // Guardar (crear / modificar)
   const handleSubmitForm = async () => {
-    if (
-      !formData.dni ||
-      !formData.nombre ||
-      !formData.apellido ||
-      !formData.materia_id
-    ) {
-      alert("DNI, Nombre, Apellido y Curso son obligatorios.");
+    // CAMBIO CLAVE: Solo DNI, Nombre y Apellido son obligatorios
+    if (!formData.dni || !formData.nombre || !formData.apellido) {
+      alert("DNI, Nombre y Apellido son obligatorios.");
       return;
     }
 
-    // El objeto dataToSend contiene el materia_id, que es crucial para la inscripción
-    const dataToSend = {
+    // Datos base para enviar
+    let dataToSend = {
       dni: formData.dni,
       nombre: formData.nombre,
       apellido: formData.apellido,
       telefono: formData.telefono,
       email: formData.email,
-      materia_id: parseInt(formData.materia_id),
     };
 
     try {
       if (accionActual === "agregar") {
-        // CLAVE: Se llama a la API. El BACKEND DEBE estar configurado
-        // para, tras crear el alumno, usar materia_id para crear una
-        // entrada en la tabla 'inscripciones' (o asignar la materia/comision
-        // por defecto directamente al alumno).
+        // En POST, el backend ahora ignora materia_id y solo crea el alumno.
         await apiPost("/gestion/alumnos", dataToSend);
-        alert("✅ Alumno agregado y registrado en su curso exitosamente.");
+        
+        // Mensaje de éxito actualizado
+        alert("✅ Alumno agregado exitosamente. Pendiente de asignación de curso.");
+
       } else {
+        // En PUT, sí se envía materia_id para actualizar la inscripción si es necesario
+        dataToSend.materia_id = parseInt(formData.materia_id);
+        
         await apiPut(`/gestion/alumnos/${alumnoSeleccionado}`, dataToSend);
         alert("✅ Alumno modificado exitosamente.");
       }
@@ -136,12 +123,12 @@ const GestionAlumnos = () => {
       setAlumnoSeleccionado(null);
     } catch (err) {
       console.error("Error en CRUD alumnos:", err);
-      // Mensaje modificado para ayudar al usuario a diagnosticar el problema de la inscripción
-      alert(`🔴 Error al guardar: ${err.message || "Error de servidor"}. Verifique que el servidor cree la inscripción/registro del curso.`);
+      // Mensaje genérico de error
+      alert(`🔴 Error al guardar: ${err.message || "Error de servidor"}.`);
     }
   };
 
-  // Eliminar alumno
+  // Eliminar alumno (sin cambios)
   const handleEliminar = async (id) => {
     if (
       !window.confirm(
@@ -152,8 +139,6 @@ const GestionAlumnos = () => {
     }
 
     try {
-      // Nota: El backend debe asegurarse de eliminar también las inscripciones
-      // y otros registros relacionados (ej. mediante ON DELETE CASCADE en la DB).
       await apiDelete(`/gestion/alumnos/${id}`);
       await fetchAlumnos();
       setAlumnoSeleccionado(null);
@@ -167,89 +152,126 @@ const GestionAlumnos = () => {
     setAlumnoSeleccionado(alumnoSeleccionado === id ? null : id);
   };
 
+  // --- FORMULARIO CORREGIDO VISUALMENTE ---
   const renderFormulario = () => (
-    <div className="formulario-gestion">
-      <div className="campos-labels">
-        <span className="label-col">DNI</span>
-        <span className="label-col">Nombre</span>
-        <span className="label-col">Apellido</span>
-        <span className="label-col">Teléfono</span>
-        <span className="label-col">Email</span>
-        <span className="label-col">Curso</span>
-      </div>
-
+    <div className="formulario-gestion" style={{ padding: "20px" }}>
+      <h3 style={{ color: "white", marginBottom: "15px", textAlign: "center" }}>
+        {accionActual === "agregar" ? "Agregar Nuevo Alumno" : "Modificar Alumno"}
+      </h3>
+      
+      {/* Grid de 3 columnas para que se vea bien */}
       <div
         className="campos-grid"
-        style={{ gridTemplateColumns: "repeat(6, 1fr)" }}
+        style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(3, 1fr)", 
+            gap: "15px",
+            marginBottom: "20px"
+        }}
       >
-        <input
-          type="text"
-          name="dni"
-          placeholder="DNI"
-          className="campo-texto"
-          value={formData.dni}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          name="nombre"
-          placeholder="Nombre"
-          className="campo-texto"
-          value={formData.nombre}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          name="apellido"
-          placeholder="Apellido"
-          className="campo-texto"
-          value={formData.apellido}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          name="telefono"
-          placeholder="Teléfono"
-          className="campo-texto"
-          value={formData.telefono}
-          onChange={handleInputChange}
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="campo-texto"
-          value={formData.email}
-          onChange={handleInputChange}
-        />
+        <div className="campo-grupo">
+            <label style={{color:"#ccc", fontSize:"0.9em"}}>DNI *</label>
+            <input
+            type="text"
+            name="dni"
+            placeholder="Ej: 12345678"
+            className="campo-texto"
+            style={{width: "100%"}}
+            value={formData.dni}
+            onChange={handleInputChange}
+            required
+            />
+        </div>
 
-        <select
-          name="materia_id"
-          className="campo-texto"
-          // Convertir el valor a string para que coincida con la opción
-          value={formData.materia_id.toString()} 
-          onChange={handleInputChange}
-        >
-          {materiasDisponibles.map((materia) => (
-            <option key={materia.id} value={materia.id}>
-              {materia.nombre}
-            </option>
-          ))}
-        </select>
+        <div className="campo-grupo">
+            <label style={{color:"#ccc", fontSize:"0.9em"}}>Nombre *</label>
+            <input
+            type="text"
+            name="nombre"
+            placeholder="Nombre"
+            className="campo-texto"
+            style={{width: "100%"}}
+            value={formData.nombre}
+            onChange={handleInputChange}
+            required
+            />
+        </div>
+
+        <div className="campo-grupo">
+            <label style={{color:"#ccc", fontSize:"0.9em"}}>Apellido *</label>
+            <input
+            type="text"
+            name="apellido"
+            placeholder="Apellido"
+            className="campo-texto"
+            style={{width: "100%"}}
+            value={formData.apellido}
+            onChange={handleInputChange}
+            required
+            />
+        </div>
+
+        <div className="campo-grupo">
+            <label style={{color:"#ccc", fontSize:"0.9em"}}>Teléfono</label>
+            <input
+            type="text"
+            name="telefono"
+            placeholder="Teléfono"
+            className="campo-texto"
+            style={{width: "100%"}}
+            value={formData.telefono}
+            onChange={handleInputChange}
+            />
+        </div>
+
+        <div className="campo-grupo">
+            <label style={{color:"#ccc", fontSize:"0.9em"}}>Email</label>
+            <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            className="campo-texto"
+            style={{width: "100%"}}
+            value={formData.email}
+            onChange={handleInputChange}
+            />
+        </div>
+
+        <div className="campo-grupo">
+            {/* El curso ahora solo es relevante al MODIFICAR al alumno, ya que la creación es separada. */}
+            <label style={{color:"#ccc", fontSize:"0.9em"}}>
+                Curso (Solo aplica a Modificar)
+            </label>
+            <select
+            name="materia_id"
+            className="campo-texto"
+            style={{width: "100%"}}
+            // Si es agregar, el valor 0 significa "sin curso seleccionado"
+            value={formData.materia_id.toString()}
+            onChange={handleInputChange}
+            >
+            <option value="0">Sin curso asignado</option>
+            {materiasDisponibles.map((materia) => (
+                <option key={materia.id} value={materia.id}>
+                {materia.nombre}
+                </option>
+            ))}
+            </select>
+        </div>
       </div>
 
-      <button className="boton-volver" onClick={handleSubmitForm}>
-        {accionActual === "agregar"
-          ? "Confirmar Agregar (Alumno + Inscripción)"
-          : "Guardar Modificación"}
-      </button>
-      <button
-        className="boton-eliminar"
-        style={{ right: "auto", left: "30px", top: "auto", bottom: "30px" }}
-        onClick={() => setModo("lista")}
-      >
-        Cancelar
-      </button>
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
+        <button className="boton-volver" onClick={handleSubmitForm} style={{ position: "static" }}>
+            {accionActual === "agregar" ? "Confirmar Agregar Alumno" : "Guardar Modificación"}
+        </button>
+        <button
+            className="boton-eliminar"
+            style={{ position: "static", backgroundColor: "#666" }}
+            onClick={() => setModo("lista")}
+        >
+            Cancelar
+        </button>
+      </div>
     </div>
   );
 
@@ -292,13 +314,7 @@ const GestionAlumnos = () => {
           </div>
         ))
       ) : (
-        <p
-          style={{
-            color: "white",
-            textAlign: "center",
-            padding: "20px",
-          }}
-        >
+        <p style={{ color: "white", textAlign: "center", padding: "20px" }}>
           No hay alumnos registrados.
         </p>
       )}
@@ -316,14 +332,8 @@ const GestionAlumnos = () => {
 
       <div className="panel-acciones" style={{ position: "relative" }}>
         {isLoading ? (
-          <p
-            style={{
-              color: "white",
-              textAlign: "center",
-              padding: "50px",
-            }}
-          >
-            Cargando datos de la base de datos...
+          <p style={{ color: "white", textAlign: "center", padding: "50px" }}>
+            Cargando datos...
           </p>
         ) : (
           <>
@@ -332,7 +342,6 @@ const GestionAlumnos = () => {
                 <button
                   className="boton-accion agregar"
                   onClick={() => handleAbrirFormulario("agregar")}
-                  disabled={materiasDisponibles.length === 0}
                 >
                   Agregar alumno
                 </button>
@@ -340,16 +349,9 @@ const GestionAlumnos = () => {
                 <button
                   className="boton-accion modificar"
                   onClick={() => {
-                    const selected = alumnos.find(
-                      (a) => a.id === alumnoSeleccionado
-                    );
-                    if (selected) {
-                      handleAbrirFormulario("modificar", selected);
-                    } else {
-                      alert(
-                        "Por favor, selecciona un alumno para modificar."
-                      );
-                    }
+                    const selected = alumnos.find((a) => a.id === alumnoSeleccionado);
+                    if (selected) handleAbrirFormulario("modificar", selected);
+                    else alert("Por favor, selecciona un alumno para modificar.");
                   }}
                   disabled={!alumnoSeleccionado}
                 >
@@ -362,11 +364,7 @@ const GestionAlumnos = () => {
                     alumnoSeleccionado && handleEliminar(alumnoSeleccionado)
                   }
                   disabled={!alumnoSeleccionado}
-                  style={{
-                    position: "absolute",
-                    top: "20px",
-                    right: "20px",
-                  }}
+                  style={{ position: "absolute", top: "20px", right: "20px" }}
                 >
                   Eliminar
                 </button>
