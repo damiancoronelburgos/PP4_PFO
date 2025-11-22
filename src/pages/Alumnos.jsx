@@ -31,12 +31,16 @@ export default function Alumnos() {
   useEffect(() => {
     async function cargarDatos() {
       const data = await fetchAlumnoMe();
+
       if (data) {
         setAlumno(data);
         setAlumnoId(data.id);
+
+        if (data.avatarUrl) {
+          localStorage.setItem("alumnoAvatar", data.avatarUrl);
+        }
       }
 
-      // Notificaciones REALES desde el backend
       const notifs = await fetchAlumnoNotificaciones();
       setNotificaciones(notifs);
     }
@@ -45,21 +49,43 @@ export default function Alumnos() {
   }, []);
 
   // ================================================================
-  // CONTADOR DE NOTIFICACIONES NO LEÍDAS
+  // CONTADOR DE NO LEÍDAS (igual que el panel)
   // ================================================================
+  const STORAGE_KEY_READ = `notes_read_alumno`;
+  const STORAGE_KEY_DISMISSED = `notes_dismissed_alumno`;
+
+  // IDs marcados como leídos
+  const readSet = new Set(
+    JSON.parse(localStorage.getItem(STORAGE_KEY_READ) || "[]")
+  );
+
+  // IDs descartados (eliminados visualmente)
+  const dismissedSet = new Set(
+    JSON.parse(localStorage.getItem(STORAGE_KEY_DISMISSED) || "[]")
+  );
+
+  // Contador final
   const unreadCount = useMemo(() => {
-    return notificaciones.filter((n) => !n.leida).length;
+    return notificaciones.filter(
+      (n) => !dismissedSet.has(n.id) && !readSet.has(n.id)
+    ).length;
   }, [notificaciones]);
 
   // ================================================================
   // PANEL PRINCIPAL
   // ================================================================
   const renderPanel = () => {
-    if (!alumnoId) return null; // Evita errores mientras carga
+    if (!alumnoId) return null;
 
     switch (active) {
       case "perfil":
-        return <AlumnoPerfil setActive={setActive} />;
+        return (
+          <AlumnoPerfil
+            setActive={setActive}
+            alumno={alumno}
+            setAlumno={setAlumno}
+          />
+        );
 
       case "inscripcion":
         return <AlumnoInscripcion alumnoId={alumnoId} />;
@@ -68,13 +94,23 @@ export default function Alumnos() {
         return <AlumnoCalificaciones alumnoId={alumnoId} />;
 
       case "historial":
-        return <AlumnoHistorial alumnoId={alumnoId} setActive={setActive} />;
+        return (
+          <AlumnoHistorial alumnoId={alumnoId} setActive={setActive} />
+        );
 
       case "notificaciones":
-        return <AlumnoNotificaciones alumnoId={alumnoId} />;
+        return (
+          <AlumnoNotificaciones
+            setActive={setActive}
+            notificaciones={notificaciones}
+            setNotificaciones={setNotificaciones}
+          />
+        );
 
       case "asistencias":
-        return <AlumnoAsistenciasYJustificaciones alumnoId={alumnoId} />;
+        return (
+          <AlumnoAsistenciasYJustificaciones alumnoId={alumnoId} />
+        );
 
       case "calendario":
         return <AlumnoCalendario alumnoId={alumnoId} />;
@@ -104,8 +140,14 @@ export default function Alumnos() {
     ? `${alumno.nombre} ${alumno.apellido}`
     : "Alumno/a";
 
+  const avatarSidebar =
+    alumno?.avatarUrl ||
+    localStorage.getItem("alumnoAvatar") ||
+    "/alumno.jpg";
+
   return (
     <div className="alumnos-page">
+
       {/* ===================== FONDO ===================== */}
       <div className="full-bg">
         <img src="/prisma.png" className="bg-img" alt="fondo" />
@@ -125,7 +167,7 @@ export default function Alumnos() {
             </button>
 
             <img
-              src={alumno?.avatarUrl || "/alumno.jpg"}
+              src={avatarSidebar}
               className="sb-avatar"
               onClick={() => setActive("perfil")}
               style={{ cursor: "pointer" }}
@@ -160,10 +202,11 @@ export default function Alumnos() {
               <span className="sb-logout-x">×</span>
             </button>
           </div>
+
         </div>
       </aside>
 
-      {/* LOGO */}
+      {/* ===================== LOGO ===================== */}
       <div className="brand">
         <div className="brand__circle">
           <img src="/Logo.png" className="brand__logo" />
@@ -171,8 +214,9 @@ export default function Alumnos() {
         <h1 className="brand__title">Instituto Superior Prisma</h1>
       </div>
 
-      {/* PANEL PRINCIPAL */}
+      {/* ===================== PANEL PRINCIPAL ===================== */}
       <div className="panel-visor">{renderPanel()}</div>
+
     </div>
   );
 }

@@ -7,6 +7,9 @@ import {
   API_ORIGIN,
 } from "./api";
 
+// ============================
+// Normalizar URL de avatar
+// ============================
 function normalizeAvatarUrl(rawUrl) {
   if (!rawUrl) return null;
   if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
@@ -14,7 +17,9 @@ function normalizeAvatarUrl(rawUrl) {
   return `${API_ORIGIN}/${rawUrl}`;
 }
 
-// ----- GET DATOS -----
+// ============================
+// PERFIL — GET DATOS
+// ============================
 export async function fetchAlumnoMe() {
   try {
     const data = await apiGet("/api/alumnos/me/datos");
@@ -26,7 +31,9 @@ export async function fetchAlumnoMe() {
   }
 }
 
-// ----- AVATAR -----
+// ============================
+// PERFIL — SUBIR AVATAR
+// ============================
 export async function uploadAlumnoAvatar(file) {
   const formData = new FormData();
   formData.append("avatar", file);
@@ -60,11 +67,16 @@ export async function uploadAlumnoAvatar(file) {
   }
 }
 
-// ----- PASSWORD -----
-export async function changeAlumnoPassword(newPassword) {
+// ============================
+// PERFIL — CAMBIAR CONTRASEÑA
+// (corregido para coincidir con backend real)
+// ============================
+export async function changeAlumnoPassword(currentPassword, newPassword, confirmPassword) {
   try {
     const res = await apiPost("/api/alumnos/me/password", {
-      password: newPassword,
+      currentPassword,
+      newPassword,
+      confirmPassword,
     });
     return { ok: true, data: res };
   } catch (err) {
@@ -73,7 +85,9 @@ export async function changeAlumnoPassword(newPassword) {
   }
 }
 
-// ----- NOTIFICACIONES -----
+// ============================
+// NOTIFICACIONES
+// ============================
 export async function fetchAlumnoNotificaciones() {
   try {
     const data = await apiGet("/api/alumnos/me/notificaciones");
@@ -84,7 +98,9 @@ export async function fetchAlumnoNotificaciones() {
   }
 }
 
-// ----- ASISTENCIAS -----
+// ============================
+// ASISTENCIAS
+// ============================
 export async function fetchAlumnoAsistencias() {
   try {
     const data = await apiGet("/api/alumnos/me/asistencias");
@@ -95,7 +111,9 @@ export async function fetchAlumnoAsistencias() {
   }
 }
 
-// === LISTAR JUSTIFICACIONES ===
+// ============================
+// JUSTIFICACIONES
+// ============================
 export async function fetchAlumnoJustificaciones() {
   try {
     const data = await apiGet("/api/alumnos/me/justificaciones");
@@ -106,7 +124,6 @@ export async function fetchAlumnoJustificaciones() {
   }
 }
 
-// === ENVIAR JUSTIFICACIÓN ===
 export async function sendAlumnoJustificacion(formData) {
   try {
     const data = await apiPostForm("/api/alumnos/me/justificaciones", formData);
@@ -117,7 +134,9 @@ export async function sendAlumnoJustificacion(formData) {
   }
 }
 
-// ----- DOCENTES (contacto) -----
+// ============================
+// CONTACTO — DOCENTES (SE MANTIENE TU FUNCIÓN ORIGINAL)
+// ============================
 export async function fetchAlumnoDocentes() {
   try {
     const data = await apiGet("/api/alumnos/docentes");
@@ -128,7 +147,9 @@ export async function fetchAlumnoDocentes() {
   }
 }
 
-// ----- INSTITUTO (contacto) -----
+// ============================
+// CONTACTO — INSTITUTO
+// ============================
 export function fetchInstituto() {
   return apiGet("/api/alumnos/instituto");
 }
