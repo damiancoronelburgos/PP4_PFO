@@ -31,12 +31,17 @@ export default function Alumnos() {
   useEffect(() => {
     async function cargarDatos() {
       const data = await fetchAlumnoMe();
+
       if (data) {
         setAlumno(data);
         setAlumnoId(data.id);
+
+        // Guardar avatar en localStorage (igual que Preceptor)
+        if (data.avatarUrl) {
+          localStorage.setItem("alumnoAvatar", data.avatarUrl);
+        }
       }
 
-      // Notificaciones REALES desde el backend
       const notifs = await fetchAlumnoNotificaciones();
       setNotificaciones(notifs);
     }
@@ -55,11 +60,17 @@ export default function Alumnos() {
   // PANEL PRINCIPAL
   // ================================================================
   const renderPanel = () => {
-    if (!alumnoId) return null; // Evita errores mientras carga
+    if (!alumnoId) return null;
 
     switch (active) {
       case "perfil":
-        return <AlumnoPerfil setActive={setActive} />;
+        return (
+          <AlumnoPerfil
+            setActive={setActive}
+            alumno={alumno}
+            setAlumno={setAlumno}   // <-- necesario para actualizar avatar
+          />
+        );
 
       case "inscripcion":
         return <AlumnoInscripcion alumnoId={alumnoId} />;
@@ -104,8 +115,14 @@ export default function Alumnos() {
     ? `${alumno.nombre} ${alumno.apellido}`
     : "Alumno/a";
 
+  const avatarSidebar =
+    alumno?.avatarUrl ||
+    localStorage.getItem("alumnoAvatar") ||
+    "/alumno.jpg";
+
   return (
     <div className="alumnos-page">
+
       {/* ===================== FONDO ===================== */}
       <div className="full-bg">
         <img src="/prisma.png" className="bg-img" alt="fondo" />
@@ -125,7 +142,7 @@ export default function Alumnos() {
             </button>
 
             <img
-              src={alumno?.avatarUrl || "/alumno.jpg"}
+              src={avatarSidebar}
               className="sb-avatar"
               onClick={() => setActive("perfil")}
               style={{ cursor: "pointer" }}
@@ -163,7 +180,7 @@ export default function Alumnos() {
         </div>
       </aside>
 
-      {/* LOGO */}
+      {/* ===================== LOGO ===================== */}
       <div className="brand">
         <div className="brand__circle">
           <img src="/Logo.png" className="brand__logo" />
@@ -171,8 +188,9 @@ export default function Alumnos() {
         <h1 className="brand__title">Instituto Superior Prisma</h1>
       </div>
 
-      {/* PANEL PRINCIPAL */}
+      {/* ===================== PANEL PRINCIPAL ===================== */}
       <div className="panel-visor">{renderPanel()}</div>
+
     </div>
   );
 }
