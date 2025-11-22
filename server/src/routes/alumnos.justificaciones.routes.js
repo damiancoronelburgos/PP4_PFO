@@ -1,15 +1,24 @@
 import { Router } from "express";
-import authMiddleware from "../middlewares/auth.middleware.js";
+import uploadJustificacion from "../middlewares/uploadJustificacion.js";
 import {
-  getJustificacionesByAlumno,
-  postJustificacionByAlumno
+  getAsistencias,
+  getJustificaciones,
+  enviarJustificacion
 } from "../controllers/alumnos.justificaciones.controller.js";
 
 const router = Router();
 
-router.get("/me/justificaciones", authMiddleware, getJustificacionesByAlumno);
+// Obtener asistencias
+router.get("/asistencias", getAsistencias);
 
-router.post("/me/justificaciones", authMiddleware, postJustificacionByAlumno);
+// Obtener justificaciones
+router.get("/justificaciones", getJustificaciones);
+
+// Enviar nueva justificación (CON ARCHIVO)
+router.post(
+  "/justificaciones",
+  uploadJustificacion.single("documento"),
+  enviarJustificacion
+);
 
 export default router;
-

@@ -1,3 +1,4 @@
+// server/src/middlewares/uploadAvatar.js
 import multer from "multer";
 import path from "path";
 import fs from "fs";

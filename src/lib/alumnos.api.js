@@ -3,6 +3,7 @@ import {
   apiPost,
   apiPatch,
   apiDelete,
+  apiPostForm,
   API_ORIGIN,
 } from "./api";
 
@@ -94,7 +95,7 @@ export async function fetchAlumnoAsistencias() {
   }
 }
 
-// ----- JUSTIFICACIONES -----
+// === LISTAR JUSTIFICACIONES ===
 export async function fetchAlumnoJustificaciones() {
   try {
     const data = await apiGet("/api/alumnos/me/justificaciones");
@@ -105,15 +106,17 @@ export async function fetchAlumnoJustificaciones() {
   }
 }
 
+// === ENVIAR JUSTIFICACIÓN ===
 export async function sendAlumnoJustificacion(formData) {
   try {
-    const data = await apiPost("/api/alumnos/me/justificaciones", formData);
+    const data = await apiPostForm("/api/alumnos/me/justificaciones", formData);
     return { ok: true, data };
   } catch (err) {
     console.error("sendAlumnoJustificacion error", err);
     return { ok: false, error: err.message };
   }
 }
+
 // ----- DOCENTES (contacto) -----
 export async function fetchAlumnoDocentes() {
   try {
@@ -124,6 +127,7 @@ export async function fetchAlumnoDocentes() {
     return [];
   }
 }
+
 // ----- INSTITUTO (contacto) -----
 export function fetchInstituto() {
   return apiGet("/api/alumnos/instituto");
