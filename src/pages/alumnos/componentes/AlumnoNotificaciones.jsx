@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { apiGet } from "../../../lib/api";  // Ajustá ruta según tu estructura
+import { apiGet } from "../../../lib/api";
 
-export default function AlumnoNotificaciones({ setActive }) {
-  const [notificaciones, setNotificaciones] = useState([]);
-
+export default function AlumnoNotificaciones({
+  setActive,
+  notificaciones,
+  setNotificaciones,
+}) {
   const [noteFilter, setNoteFilter] = useState("");
-  const [notesMode, setNotesMode] = useState("all"); // all | fav | unread
+  const [notesMode, setNotesMode] = useState("all");
 
   // ------------------------
-  // 🔐 LocalStorage PERSONAL
+  // LocalStorage PERSONAL
   // ------------------------
   const STORAGE_KEY_DISMISSED = `notes_dismissed_alumno`;
   const STORAGE_KEY_READ = `notes_read_alumno`;
@@ -41,7 +43,7 @@ export default function AlumnoNotificaciones({ setActive }) {
   });
 
   // ------------------------
-  // 🚀 Cargar desde backend
+  // RECARGAR DESDE BACKEND (una sola vez)
   // ------------------------
   useEffect(() => {
     apiGet("/api/alumnos/me/notificaciones")
@@ -54,7 +56,7 @@ export default function AlumnoNotificaciones({ setActive }) {
   }, []);
 
   // ------------------------
-  // 📌 FILTRO PRINCIPAL
+  // FILTRO PRINCIPAL
   // ------------------------
   const notesAll = useMemo(() => {
     const q = noteFilter.trim().toLowerCase();
@@ -64,11 +66,7 @@ export default function AlumnoNotificaciones({ setActive }) {
 
       if (q) {
         const text =
-          (n.titulo || "") +
-          " " +
-          (n.detalle || "") +
-          " " +
-          (n.fecha || "");
+          `${n.titulo || ""} ${n.detalle || ""} ${n.fecha || ""}`;
         if (!text.toLowerCase().includes(q)) return false;
       }
 
@@ -78,12 +76,7 @@ export default function AlumnoNotificaciones({ setActive }) {
     if (notesMode === "fav") arr = arr.filter((n) => favSet.has(n.id));
     else if (notesMode === "unread") arr = arr.filter((n) => !readSet.has(n.id));
 
-    arr.sort((a, b) => {
-      const af = favSet.has(a.id) ? 1 : 0;
-      const bf = favSet.has(b.id) ? 1 : 0;
-      if (af !== bf) return bf - af;
-      return new Date(b.fecha) - new Date(a.fecha);
-    });
+    arr.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     return arr;
   }, [noteFilter, notesMode, dismissed, notificaciones, favSet, readSet]);
@@ -94,14 +87,18 @@ export default function AlumnoNotificaciones({ setActive }) {
   );
 
   // ------------------------
-  // ✔ MARCAR COMO LEÍDA
+  // MARCAR COMO LEÍDA
   // ------------------------
   const markAsRead = (id) => {
     if (readSet.has(id)) return;
+
     const next = new Set(readSet);
     next.add(id);
     setReadSet(next);
     localStorage.setItem(STORAGE_KEY_READ, JSON.stringify([...next]));
+
+    // ⭐ Actualiza sidebar
+    setNotificaciones([...notificaciones]);
   };
 
   const toggleRead = (id) => {
@@ -111,10 +108,13 @@ export default function AlumnoNotificaciones({ setActive }) {
 
     setReadSet(next);
     localStorage.setItem(STORAGE_KEY_READ, JSON.stringify([...next]));
+
+    // ⭐ Actualiza sidebar
+    setNotificaciones([...notificaciones]);
   };
 
   // ------------------------
-  // ⭐ FAVORITOS
+  // FAVORITOS
   // ------------------------
   const toggleFav = (id) => {
     const next = new Set(favSet);
@@ -123,10 +123,13 @@ export default function AlumnoNotificaciones({ setActive }) {
 
     setFavSet(next);
     localStorage.setItem(STORAGE_KEY_FAV, JSON.stringify([...next]));
+
+    // ⭐
+    setNotificaciones([...notificaciones]);
   };
 
   // ------------------------
-  // 🗑 ELIMINAR
+  // ELIMINAR (visual)
   // ------------------------
   const removeNote = (id) => {
     const ok = window.confirm("¿Eliminar esta notificación?");
@@ -135,11 +138,17 @@ export default function AlumnoNotificaciones({ setActive }) {
     const next = new Set(dismissed);
     next.add(id);
     setDismissed(next);
-    localStorage.setItem(STORAGE_KEY_DISMISSED, JSON.stringify([...next]));
+    localStorage.setItem(
+      STORAGE_KEY_DISMISSED,
+      JSON.stringify([...next])
+    );
+
+    //  Forzar actualización
+    setNotificaciones([...notificaciones]);
   };
 
   // ------------------------
-  // 🔽 EXPANDIR
+  // EXPANDIR
   // ------------------------
   const [expanded, setExpanded] = useState(new Set());
 
@@ -190,11 +199,10 @@ export default function AlumnoNotificaciones({ setActive }) {
                 <span className="badge-dot" /> {unreadCount} sin leer
               </span>
             )}
-
-            
           </div>
         </div>
 
+        {/* BUSCADOR */}
         <div className="notes-search">
           <label>Filtrar:&nbsp;</label>
           <input
@@ -206,6 +214,7 @@ export default function AlumnoNotificaciones({ setActive }) {
           />
         </div>
 
+        {/* LISTA */}
         <div>
           {notesAll.length === 0 ? (
             <p>No hay notificaciones para mostrar.</p>

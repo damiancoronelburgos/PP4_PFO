@@ -36,7 +36,6 @@ export default function Alumnos() {
         setAlumno(data);
         setAlumnoId(data.id);
 
-        // Guardar avatar en localStorage (igual que Preceptor)
         if (data.avatarUrl) {
           localStorage.setItem("alumnoAvatar", data.avatarUrl);
         }
@@ -50,10 +49,26 @@ export default function Alumnos() {
   }, []);
 
   // ================================================================
-  // CONTADOR DE NOTIFICACIONES NO LEÍDAS
+  // CONTADOR DE NO LEÍDAS (igual que el panel)
   // ================================================================
+  const STORAGE_KEY_READ = `notes_read_alumno`;
+  const STORAGE_KEY_DISMISSED = `notes_dismissed_alumno`;
+
+  // IDs marcados como leídos
+  const readSet = new Set(
+    JSON.parse(localStorage.getItem(STORAGE_KEY_READ) || "[]")
+  );
+
+  // IDs descartados (eliminados visualmente)
+  const dismissedSet = new Set(
+    JSON.parse(localStorage.getItem(STORAGE_KEY_DISMISSED) || "[]")
+  );
+
+  // Contador final
   const unreadCount = useMemo(() => {
-    return notificaciones.filter((n) => !n.leida).length;
+    return notificaciones.filter(
+      (n) => !dismissedSet.has(n.id) && !readSet.has(n.id)
+    ).length;
   }, [notificaciones]);
 
   // ================================================================
@@ -68,7 +83,7 @@ export default function Alumnos() {
           <AlumnoPerfil
             setActive={setActive}
             alumno={alumno}
-            setAlumno={setAlumno}   // <-- necesario para actualizar avatar
+            setAlumno={setAlumno}
           />
         );
 
@@ -79,13 +94,23 @@ export default function Alumnos() {
         return <AlumnoCalificaciones alumnoId={alumnoId} />;
 
       case "historial":
-        return <AlumnoHistorial alumnoId={alumnoId} setActive={setActive} />;
+        return (
+          <AlumnoHistorial alumnoId={alumnoId} setActive={setActive} />
+        );
 
       case "notificaciones":
-        return <AlumnoNotificaciones alumnoId={alumnoId} />;
+        return (
+          <AlumnoNotificaciones
+            setActive={setActive}
+            notificaciones={notificaciones}
+            setNotificaciones={setNotificaciones}
+          />
+        );
 
       case "asistencias":
-        return <AlumnoAsistenciasYJustificaciones alumnoId={alumnoId} />;
+        return (
+          <AlumnoAsistenciasYJustificaciones alumnoId={alumnoId} />
+        );
 
       case "calendario":
         return <AlumnoCalendario alumnoId={alumnoId} />;
@@ -177,6 +202,7 @@ export default function Alumnos() {
               <span className="sb-logout-x">×</span>
             </button>
           </div>
+
         </div>
       </aside>
 
