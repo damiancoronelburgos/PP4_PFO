@@ -72,6 +72,9 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
             formData.append("descripcion", descripcion);
             formData.append("comisionId", selectedAsistencia.comision_id);
 
+            // Envía la fecha ISO para evitar sumas de días
+            formData.append("fecha", new Date(selectedAsistencia.fecha).toISOString());
+
             if (archivo) formData.append("documento", archivo);
 
             const res = await sendAlumnoJustificacion(formData);
@@ -119,13 +122,10 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
         <div className="asis-wrap">
             <div className="asis-card">
 
-                {/* HEADER */}
                 <div className="asis-header">
                     <h2 className="asis-title">Asistencias y Justificaciones</h2>
-                    
                 </div>
 
-                {/* CONTADORES */}
                 <div className="asis-summary">
                     <span className="badge-total est-p">P: {countP}</span>
                     <span className="badge-total est-a">A: {countA}</span>
@@ -208,7 +208,6 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                 {selectedAsistencia ? (
                     <form className="jus-form" onSubmit={handleSubmit}>
 
-                        {/* DATOS DE LA ASISTENCIA */}
                         <p>
                             <strong>Fecha:</strong>{" "}
                             {new Date(selectedAsistencia.fecha).toLocaleDateString("es-AR")}
@@ -218,7 +217,6 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                             <strong>Comisión:</strong> {selectedAsistencia.comision}
                         </p>
 
-                        {/* MOTIVO */}
                         <div className="jus-field">
                             <label>Motivo:</label>
                             <select
@@ -236,7 +234,6 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                             </select>
                         </div>
 
-                        {/* DESCRIPCIÓN SI MOTIVO = OTRO */}
                         {motivo === "Otro" && (
                             <div className="jus-field">
                                 <label>Descripción:</label>
@@ -249,7 +246,6 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                             </div>
                         )}
 
-                        {/* ARCHIVO */}
                         <div className="jus-field">
                             <label>Adjuntar certificado (PDF / imagen):</label>
                             <input
@@ -260,11 +256,9 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                             />
                         </div>
 
-                        {/* MENSAJES */}
                         {error && <p style={{ color: "salmon" }}>{error}</p>}
                         {okMsg && <p style={{ color: "lightgreen" }}>{okMsg}</p>}
 
-                        {/* BOTÓN */}
                         <button className="btn" disabled={enviando}>
                             {enviando ? "Enviando..." : "Enviar justificación"}
                         </button>
@@ -299,7 +293,6 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                                     </td>
                                 </tr>
                             ) : (
-
                                 justificaciones.map((j) => {
                                     const fecha = new Date(j.fecha).toLocaleDateString("es-AR");
 
@@ -309,25 +302,21 @@ export default function AlumnoAsistenciasYJustificaciones({ setActive }) {
                                             <td>{j.motivo}</td>
                                             <td>
                                                 <span
-                                                    className={`badge-state ${j.estado === "pendiente"
+                                                    className={`badge-state ${
+                                                        j.estado === "pendiente"
                                                             ? "est-a"
                                                             : j.estado === "aprobada"
-                                                                ? "est-p"
-                                                                : "est-j"
-                                                        }`}
+                                                            ? "est-p"
+                                                            : "est-j"
+                                                    }`}
                                                 >
                                                     {j.estado}
                                                 </span>
                                             </td>
                                             <td>{j.comision}</td>
+
                                             <td>
-                                                {j.documentoUrl ? (
-                                                    <a href={j.documentoUrl} target="_blank">
-                                                        Ver archivo
-                                                    </a>
-                                                ) : (
-                                                    <span style={{ opacity: 0.4 }}>—</span>
-                                                )}
+                                                <span style={{ opacity: 0.4 }}>—</span>
                                             </td>
                                         </tr>
                                     );
